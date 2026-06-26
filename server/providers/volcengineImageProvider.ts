@@ -68,7 +68,21 @@ const mapVolcengineError = (error: unknown, fallbackCode: string, fallbackMessag
 const imageToDataUrl = (image: { buffer: Buffer; mimeType: string }): string =>
   `data:${image.mimeType};base64,${image.buffer.toString('base64')}`
 
-const getVolcengineImageSize = (): string => process.env.VOLCENGINE_IMAGE_SIZE || '1920x1920'
+const minVolcenginePixels = 3686400
+
+const getVolcengineImageSize = (): string => {
+  const size = process.env.VOLCENGINE_IMAGE_SIZE || '1920x1920'
+  const [width, height] = size.split('x').map((value) => Number(value))
+
+  if (!width || !height || width * height < minVolcenginePixels) {
+    console.warn(
+      `VOLCENGINE_IMAGE_SIZE=${size} is below Volcengine minimum; falling back to 1920x1920.`
+    )
+    return '1920x1920'
+  }
+
+  return size
+}
 
 const getVolcengineTimeoutMs = (): number => Number(process.env.VOLCENGINE_IMAGE_TIMEOUT_MS || 45000)
 
