@@ -8,6 +8,7 @@ export type RemoveGreenScreenBackgroundResult = {
 }
 
 const channels = 4
+const maxOutputPixels = 1024
 
 const pixelIndex = (pixel: number): number => pixel * channels
 
@@ -47,6 +48,12 @@ export const removeGreenScreenBackground = async (
 ): Promise<RemoveGreenScreenBackgroundResult> => {
   const { data, info } = await sharp(imageBuffer)
     .rotate()
+    .resize({
+      width: maxOutputPixels,
+      height: maxOutputPixels,
+      fit: 'inside',
+      withoutEnlargement: true
+    })
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true })

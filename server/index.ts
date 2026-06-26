@@ -3,8 +3,12 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import express from 'express'
 import multer from 'multer'
+import sharp from 'sharp'
 import { getImageProvider, getImageProviderName } from './providers'
 import { maxImageSize, validateImageFile } from './utils/imageValidation'
+
+sharp.cache(false)
+sharp.concurrency(1)
 
 const app = express()
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: maxImageSize } })

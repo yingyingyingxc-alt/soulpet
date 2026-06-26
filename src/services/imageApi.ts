@@ -6,10 +6,62 @@ export type ImageApiResult = {
   code?: string
 }
 
+type ApiError = Error & { code?: string }
+
 const dataUrlToFile = async (dataUrl: string, fileName: string): Promise<File> => {
   const response = await fetch(dataUrl)
   const blob = await response.blob()
   return new File([blob], fileName, { type: blob.type || 'image/png' })
+}
+
+const wait = (ms: number): Promise<void> => new Promise((resolve) => window.setTimeout(resolve, ms))
+
+const createApiError = (message: string, code?: string): ApiError =>
+  Object.assign(new Error(message), { code })
+
+const parseJsonResponse = async (response: Response): Promise<Record<string, unknown>> => {
+  const text = await response.text()
+
+  try {
+    return JSON.parse(text) as Record<string, unknown>
+  } catch {
+    throw createApiError('服务器刚刚在重启，请再试一次。', 'SERVER_NOT_READY')
+  }
+}
+
+const shouldRetryImageJob = (error: unknown): boolean => {
+  const code = typeof error === 'object' && error && 'code' in error ? String(error.code) : ''
+  return code === 'IMAGE_JOB_NOT_FOUND' || code === 'IMAGE_JOB_INTERRUPTED' || code === 'SERVER_NOT_READY'
+}
+
+const submitImage = async (
+  endpoint: string,
+  file: File,
+  fields: Record<string, string>
+): Promise<Record<string, unknown>> => {
+  const formData = new FormData()
+  formData.set('image', file)
+
+  Object.entries(fields).forEach(([key, value]) => {
+    formData.set(key, value)
+  })
+
+  let response: Response
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      body: formData
+    })
+  } catch {
+    throw createApiError('服务器刚刚在重启，请再试一次。', 'SERVER_NOT_READY')
+  }
+  const payload = await parseJsonResponse(response)
+
+  if (!response.ok || payload.success === false) {
+    throw createApiError(String(payload.message || '请求失败'), String(payload.code || 'REQUEST_FAILED'))
+  }
+
+  return payload
 }
 
 const postImage = async (
@@ -17,33 +69,29 @@ const postImage = async (
   imageDataUrl: string,
   fields: Record<string, string>
 ): Promise<Record<string, unknown>> => {
-  const formData = new FormData()
-  formData.set('image', await dataUrlToFile(imageDataUrl, 'soulpet-upload.png'))
+  const file = await dataUrlToFile(imageDataUrl, 'soulpet-upload.png')
 
-  Object.entries(fields).forEach(([key, value]) => {
-    formData.set(key, value)
-  })
+  const run = async (allowRetry: boolean): Promise<Record<string, unknown>> => {
+    const payload = await submitImage(endpoint, file, fields)
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    body: formData
-  })
-  const payload = (await response.json()) as Record<string, unknown>
+    if (payload.status === 'processing' && payload.jobId) {
+      try {
+        return await pollImageJob(String(payload.jobId))
+      } catch (error) {
+        if (allowRetry && shouldRetryImageJob(error)) {
+          await wait(1500)
+          return run(false)
+        }
 
-  if (!response.ok || payload.success === false) {
-    throw Object.assign(new Error(String(payload.message || '请求失败')), {
-      code: payload.code
-    })
+        throw error
+      }
+    }
+
+    return payload
   }
 
-  if (payload.status === 'processing' && payload.jobId) {
-    return pollImageJob(String(payload.jobId))
-  }
-
-  return payload
+  return run(true)
 }
-
-const wait = (ms: number): Promise<void> => new Promise((resolve) => window.setTimeout(resolve, ms))
 
 const pollImageJob = async (jobId: string): Promise<Record<string, unknown>> => {
   const maxAttempts = 90
@@ -51,15 +99,18 @@ const pollImageJob = async (jobId: string): Promise<Record<string, unknown>> => 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     await wait(2000)
 
-    const response = await fetch(`/api/image-jobs/${jobId}`)
-    const payload = (await response.json()) as Record<string, unknown>
+    let response: Response
+    try {
+      response = await fetch(`/api/image-jobs/${jobId}`)
+    } catch {
+      throw createApiError('服务器刚刚在重启，请再试一次。', 'SERVER_NOT_READY')
+    }
+    const payload = await parseJsonResponse(response)
 
     if (payload.status === 'processing') continue
 
     if (!response.ok || payload.success === false) {
-      throw Object.assign(new Error(String(payload.message || '请求失败')), {
-        code: payload.code
-      })
+      throw createApiError(String(payload.message || '请求失败'), String(payload.code || 'REQUEST_FAILED'))
     }
 
     return payload
