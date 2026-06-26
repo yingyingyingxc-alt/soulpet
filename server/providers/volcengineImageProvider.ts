@@ -68,7 +68,7 @@ const mapVolcengineError = (error: unknown, fallbackCode: string, fallbackMessag
 const imageToDataUrl = (image: { buffer: Buffer; mimeType: string }): string =>
   `data:${image.mimeType};base64,${image.buffer.toString('base64')}`
 
-const getVolcengineImageSize = (): string => process.env.VOLCENGINE_IMAGE_SIZE || '1024x1024'
+const getVolcengineImageSize = (): string => process.env.VOLCENGINE_IMAGE_SIZE || '1920x1920'
 
 const getVolcengineTimeoutMs = (): number => Number(process.env.VOLCENGINE_IMAGE_TIMEOUT_MS || 45000)
 
