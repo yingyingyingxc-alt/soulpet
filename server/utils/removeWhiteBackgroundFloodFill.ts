@@ -9,7 +9,7 @@ export type RemoveWhiteBackgroundFloodFillResult = {
 
 const channels = 4
 
-const pixelIndex = (x: number, y: number, width: number): number => (y * width + x) * channels
+const pixelIndex = (pixel: number): number => pixel * channels
 
 const isNearWhiteBackground = (r: number, g: number, b: number, a: number): boolean => {
   if (a === 0) return false
@@ -20,20 +20,32 @@ const isNearWhiteBackground = (r: number, g: number, b: number, a: number): bool
   return r >= 225 && g >= 225 && b >= 225 && max - min <= 25
 }
 
-const enqueueEdgePixels = (width: number, height: number): Array<[number, number]> => {
-  const queue: Array<[number, number]> = []
+const enqueue = (queue: Int32Array, visited: Uint8Array, cursor: { tail: number }, pixel: number): void => {
+  if (visited[pixel]) return
+  visited[pixel] = 1
+  queue[cursor.tail] = pixel
+  cursor.tail += 1
+}
+
+const enqueueEdgePixels = (
+  queue: Int32Array,
+  visited: Uint8Array,
+  width: number,
+  height: number
+): { tail: number } => {
+  const cursor = { tail: 0 }
 
   for (let x = 0; x < width; x += 1) {
-    queue.push([x, 0])
-    if (height > 1) queue.push([x, height - 1])
+    enqueue(queue, visited, cursor, x)
+    if (height > 1) enqueue(queue, visited, cursor, (height - 1) * width + x)
   }
 
   for (let y = 1; y < height - 1; y += 1) {
-    queue.push([0, y])
-    if (width > 1) queue.push([width - 1, y])
+    enqueue(queue, visited, cursor, y * width)
+    if (width > 1) enqueue(queue, visited, cursor, y * width + width - 1)
   }
 
-  return queue
+  return cursor
 }
 
 export const removeWhiteBackgroundFloodFill = async (
@@ -49,18 +61,13 @@ export const removeWhiteBackgroundFloodFill = async (
   console.log('background removal input:', width, height)
 
   const visited = new Uint8Array(width * height)
-  const queue = enqueueEdgePixels(width, height)
+  const queue = new Int32Array(width * height)
+  const cursor = enqueueEdgePixels(queue, visited, width, height)
   let transparentPixels = 0
 
-  for (let cursor = 0; cursor < queue.length; cursor += 1) {
-    const [x, y] = queue[cursor]
-    if (x < 0 || x >= width || y < 0 || y >= height) continue
-
-    const visitedIndex = y * width + x
-    if (visited[visitedIndex]) continue
-    visited[visitedIndex] = 1
-
-    const index = pixelIndex(x, y, width)
+  for (let head = 0; head < cursor.tail; head += 1) {
+    const pixel = queue[head]
+    const index = pixelIndex(pixel)
     const r = data[index]
     const g = data[index + 1]
     const b = data[index + 2]
@@ -71,7 +78,11 @@ export const removeWhiteBackgroundFloodFill = async (
     data[index + 3] = 0
     transparentPixels += 1
 
-    queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1])
+    const x = pixel % width
+    if (x < width - 1) enqueue(queue, visited, cursor, pixel + 1)
+    if (x > 0) enqueue(queue, visited, cursor, pixel - 1)
+    if (pixel + width < width * height) enqueue(queue, visited, cursor, pixel + width)
+    if (pixel >= width) enqueue(queue, visited, cursor, pixel - width)
   }
 
   const pngBuffer = await sharp(data, { raw: { width, height, channels } }).png().toBuffer()
