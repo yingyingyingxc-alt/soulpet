@@ -36,7 +36,38 @@ const postImage = async (
     })
   }
 
+  if (payload.status === 'processing' && payload.jobId) {
+    return pollImageJob(String(payload.jobId))
+  }
+
   return payload
+}
+
+const wait = (ms: number): Promise<void> => new Promise((resolve) => window.setTimeout(resolve, ms))
+
+const pollImageJob = async (jobId: string): Promise<Record<string, unknown>> => {
+  const maxAttempts = 90
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    await wait(2000)
+
+    const response = await fetch(`/api/image-jobs/${jobId}`)
+    const payload = (await response.json()) as Record<string, unknown>
+
+    if (payload.status === 'processing') continue
+
+    if (!response.ok || payload.success === false) {
+      throw Object.assign(new Error(String(payload.message || '请求失败')), {
+        code: payload.code
+      })
+    }
+
+    return payload
+  }
+
+  throw Object.assign(new Error('图片生成仍在处理中，请稍后重试。'), {
+    code: 'NETWORK_TIMEOUT'
+  })
 }
 
 export const generatePetWithAI = async (

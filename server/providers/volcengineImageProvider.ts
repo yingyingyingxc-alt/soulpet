@@ -84,7 +84,7 @@ const getVolcengineImageSize = (): string => {
   return size
 }
 
-const getVolcengineTimeoutMs = (): number => Number(process.env.VOLCENGINE_IMAGE_TIMEOUT_MS || 45000)
+const getVolcengineTimeoutMs = (): number => Number(process.env.VOLCENGINE_IMAGE_TIMEOUT_MS || 120000)
 
 const stripDataUrlPrefix = (image: string): string => {
   const [, base64] = image.match(/^data:image\/[a-zA-Z0-9.+-]+;base64,(.+)$/) || []
