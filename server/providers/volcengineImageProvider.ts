@@ -1,5 +1,6 @@
 import { characterBackgroundRemovalPrompt } from '../prompts/characterBackgroundRemovalPrompt'
 import { petGenerationPrompt } from '../prompts/petGenerationPrompt'
+import { prepareImageForOpenAI } from '../utils/prepareImageForOpenAI'
 import { removeGreenScreenBackground } from '../utils/removeGreenScreenBackground'
 import { removeWhiteBackgroundFloodFill } from '../utils/removeWhiteBackgroundFloodFill'
 import { withRetry } from '../utils/retry'
@@ -41,6 +42,10 @@ const mapVolcengineError = (error: unknown, fallbackCode: string, fallbackMessag
   const message = error instanceof Error ? error.message : fallbackMessage
   const lowerMessage = message.toLowerCase()
 
+  if (error instanceof Error && error.name === 'AbortError') {
+    return { code: 'NETWORK_TIMEOUT', message: '火山方舟请求超时，请稍后重试。', status: 504 }
+  }
+
   if (status === 401 || status === 403) {
     return { code: 'VOLCENGINE_API_KEY_MISSING', message: '火山方舟 API Key 无效或缺失。', status }
   }
@@ -60,8 +65,12 @@ const mapVolcengineError = (error: unknown, fallbackCode: string, fallbackMessag
   return { code: fallbackCode, message: `火山方舟返回错误：${message}`, status }
 }
 
-const imageToDataUrl = (file: Express.Multer.File): string =>
-  `data:${file.mimetype};base64,${file.buffer.toString('base64')}`
+const imageToDataUrl = (image: { buffer: Buffer; mimeType: string }): string =>
+  `data:${image.mimeType};base64,${image.buffer.toString('base64')}`
+
+const getVolcengineImageSize = (): string => process.env.VOLCENGINE_IMAGE_SIZE || '1024x1024'
+
+const getVolcengineTimeoutMs = (): number => Number(process.env.VOLCENGINE_IMAGE_TIMEOUT_MS || 45000)
 
 const stripDataUrlPrefix = (image: string): string => {
   const [, base64] = image.match(/^data:image\/[a-zA-Z0-9.+-]+;base64,(.+)$/) || []
@@ -112,7 +121,9 @@ const callVolcengineImageApi = async (
   const { apiKey, model } = getVolcengineConfig()
 
   try {
-    const size = '2048x2048'
+    const size = getVolcengineImageSize()
+    const timeoutMs = getVolcengineTimeoutMs()
+    const preparedImage = await prepareImageForOpenAI(input.file)
 
     console.log('Using image model:', model)
     console.log('Using image size:', size)
@@ -120,7 +131,7 @@ const callVolcengineImageApi = async (
     const payload = {
       model,
       prompt,
-      image: imageToDataUrl(input.file),
+      image: imageToDataUrl(preparedImage),
       response_format: 'b64_json',
       size,
       n: 1,
@@ -129,16 +140,24 @@ const callVolcengineImageApi = async (
       // 在这里按具体模型文档调整 image / response_format / size 等字段。
     }
 
-    const response = await withRetry(async () =>
-      fetch('https://ark.cn-beijing.volces.com/api/v3/images/generations', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      })
-    )
+    const response = await withRetry(async () => {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), timeoutMs)
+
+      try {
+        return await fetch('https://ark.cn-beijing.volces.com/api/v3/images/generations', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        })
+      } finally {
+        clearTimeout(timeout)
+      }
+    }, 0)
 
     const result = (await response.json()) as VolcengineImageResponse
 
