@@ -462,7 +462,9 @@ input[type="text"]:focus {
   align-items: stretch;
   padding: 18px;
   overflow: hidden;
-  background: #bfe8f0;
+  background:
+    radial-gradient(circle at 20% 8%, rgba(255, 246, 211, 0.9), transparent 28%),
+    linear-gradient(180deg, #bfe8f0 0%, #dff3ee 100%);
 }
 
 .pet-home-layout {
@@ -472,27 +474,55 @@ input[type="text"]:focus {
   overflow: hidden;
   border-radius: 24px;
   background:
-    linear-gradient(#bfe8f0 0 42%, #f8e7b7 42% 43%, #a8d982 43% 100%);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.18), transparent 42%),
+    linear-gradient(#fff4df 0 59%, #f4cf9f 59% 60%, #d9b07d 60% 100%);
   box-shadow:
     inset 0 0 0 3px rgba(255, 255, 255, 0.58),
     0 24px 70px rgba(51, 115, 105, 0.16);
 }
 
 .scene-morning .pet-home-layout {
-  background: linear-gradient(#cdeff2 0 42%, #ffe5aa 42% 43%, #abdd84 43% 100%);
+  background:
+    radial-gradient(circle at 24% 16%, rgba(255, 242, 172, 0.58), transparent 28%),
+    linear-gradient(#fff6e3 0 59%, #f4cf9f 59% 60%, #d8ad78 60% 100%);
 }
 
 .scene-afternoon .pet-home-layout,
 .scene-noon .pet-home-layout {
-  background: linear-gradient(#bfe8f0 0 42%, #f8e7b7 42% 43%, #a8d982 43% 100%);
+  background:
+    radial-gradient(circle at 28% 18%, rgba(255, 240, 175, 0.46), transparent 32%),
+    linear-gradient(#fff2dc 0 59%, #f2c993 59% 60%, #d5a66f 60% 100%);
 }
 
 .scene-evening .pet-home-layout {
-  background: linear-gradient(#f4c795 0 42%, #ffe1a3 42% 43%, #9ecb78 43% 100%);
+  background:
+    radial-gradient(circle at 72% 16%, rgba(255, 189, 143, 0.34), transparent 32%),
+    linear-gradient(#ffe4ce 0 59%, #eebc87 59% 60%, #c89565 60% 100%);
 }
 
 .scene-night .pet-home-layout {
-  background: linear-gradient(#26375f 0 42%, #6c6689 42% 43%, #5d8b73 43% 100%);
+  background:
+    radial-gradient(circle at 70% 14%, rgba(211, 222, 255, 0.26), transparent 30%),
+    linear-gradient(#2c365a 0 59%, #57536f 59% 60%, #6d6a7c 60% 100%);
+}
+
+.scene-night .sunbeam,
+.scene-night .sun-spot {
+  opacity: 0.08;
+}
+
+.scene-night .window-shape,
+.scene-night .skylight {
+  background:
+    linear-gradient(90deg, transparent 47%, rgba(255, 255, 255, 0.42) 47% 53%, transparent 53%),
+    linear-gradient(transparent 47%, rgba(255, 255, 255, 0.4) 47% 53%, transparent 53%),
+    #586d9f;
+}
+
+.scene-night .wall-lamp {
+  box-shadow:
+    0 0 42px rgba(255, 217, 168, 0.86),
+    0 -16px 0 -12px #ac7750;
 }
 
 .ambient-icon {
@@ -504,7 +534,10 @@ input[type="text"]:focus {
 }
 
 .home-scene,
-.home-scene span {
+.home-scene span,
+.home-scene i,
+.home-scene b,
+.home-scene em {
   position: absolute;
   pointer-events: none;
 }
@@ -513,7 +546,170 @@ input[type="text"]:focus {
   inset: 0;
 }
 
+.attic-roof {
+  inset: 0 0 auto;
+  height: 31%;
+  background:
+    linear-gradient(27deg, transparent 0 45%, rgba(214, 157, 96, 0.2) 45% 46%, transparent 46%),
+    linear-gradient(-27deg, transparent 0 45%, rgba(214, 157, 96, 0.2) 45% 46%, transparent 46%);
+}
+
+.attic-roof::before,
+.attic-roof::after {
+  position: absolute;
+  top: -8%;
+  width: 62%;
+  height: 72%;
+  border-radius: 0 0 28px 28px;
+  background: #f2c892;
+  box-shadow: inset 0 -10px 0 rgba(148, 88, 51, 0.08);
+  content: "";
+}
+
+.attic-roof::before {
+  left: -4%;
+  transform: skewY(-16deg);
+  transform-origin: right bottom;
+}
+
+.attic-roof::after {
+  right: -4%;
+  transform: skewY(16deg);
+  transform-origin: left bottom;
+}
+
+.roof-beam {
+  top: 18%;
+  width: 44%;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(179, 112, 67, 0.48);
+  z-index: 1;
+}
+
+.beam-left {
+  left: 10%;
+  transform: rotate(16deg);
+}
+
+.beam-right {
+  right: 10%;
+  transform: rotate(-16deg);
+}
+
+.skylight {
+  left: 50%;
+  top: 7%;
+  z-index: 2;
+  width: 146px;
+  height: 72px;
+  border: 8px solid rgba(255, 255, 255, 0.9);
+  border-radius: 26px;
+  background:
+    linear-gradient(90deg, transparent 47%, rgba(255, 255, 255, 0.66) 47% 53%, transparent 53%),
+    #b9e8f2;
+  box-shadow: 0 14px 26px rgba(88, 102, 82, 0.12);
+  transform: translateX(-50%) rotate(-2deg);
+}
+
+.skylight i {
+  inset: 12px 18px auto auto;
+  width: 22px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.vine {
+  z-index: 3;
+  width: 8px;
+  height: 150px;
+  border-radius: 999px;
+  background: #7eb47d;
+  transform-origin: top center;
+}
+
+.vine::before,
+.vine::after {
+  position: absolute;
+  width: 24px;
+  height: 14px;
+  border-radius: 999px 999px 999px 6px;
+  background: #8fca86;
+  content: "";
+}
+
+.vine::before {
+  left: -20px;
+  top: 44px;
+  transform: rotate(-24deg);
+}
+
+.vine::after {
+  right: -19px;
+  top: 92px;
+  transform: rotate(28deg);
+}
+
+.vine-left {
+  left: 19%;
+  top: 7%;
+  animation: hangingSwing 5.4s ease-in-out infinite;
+}
+
+.vine-right {
+  right: 25%;
+  top: 8%;
+  height: 112px;
+  animation: hangingSwing 6.2s ease-in-out infinite reverse;
+}
+
+.sunbeam {
+  z-index: 1;
+  width: 26%;
+  height: 54%;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255, 245, 180, 0.38), rgba(255, 245, 180, 0));
+  filter: blur(1px);
+  transform: rotate(18deg);
+  animation: sunbeamDrift 12s ease-in-out infinite;
+}
+
+.sunbeam-one {
+  left: 28%;
+  top: 10%;
+}
+
+.sunbeam-two {
+  left: 47%;
+  top: 13%;
+  opacity: 0.68;
+  animation-delay: -5s;
+}
+
+.sun-spot {
+  z-index: 2;
+  width: 48px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 241, 170, 0.42);
+  filter: blur(2px);
+  animation: sunSpotFloat 9s ease-in-out infinite;
+}
+
+.spot-one {
+  left: 30%;
+  top: 70%;
+}
+
+.spot-two {
+  right: 24%;
+  top: 66%;
+  animation-delay: -3s;
+}
+
 .cloud {
+  z-index: 2;
   width: 112px;
   height: 42px;
   border-radius: 999px;
@@ -524,39 +720,301 @@ input[type="text"]:focus {
 }
 
 .cloud-one {
-  left: 14%;
-  top: 11%;
+  left: 10%;
+  top: 20%;
+  animation: cloudDrift 16s ease-in-out infinite;
 }
 
 .cloud-two {
-  right: 15%;
-  top: 15%;
+  right: 13%;
+  top: 23%;
   transform: scale(0.72);
+  animation: cloudDrift 18s ease-in-out infinite reverse;
 }
 
 .window-shape {
-  left: 50%;
-  top: 78px;
-  width: 178px;
-  height: 138px;
-  border: 10px solid rgba(255, 255, 255, 0.92);
-  border-radius: 36px;
+  left: 23%;
+  top: 28%;
+  z-index: 2;
+  width: 174px;
+  height: 132px;
+  border: 9px solid rgba(255, 255, 255, 0.94);
+  border-radius: 34px;
   background:
     linear-gradient(90deg, transparent 47%, rgba(255, 255, 255, 0.74) 47% 53%, transparent 53%),
     linear-gradient(transparent 47%, rgba(255, 255, 255, 0.74) 47% 53%, transparent 53%),
     #9cd6ec;
-  transform: translateX(-50%);
+  transform: translateX(-50%) rotate(-1deg);
   box-shadow: 0 12px 28px rgba(31, 111, 103, 0.08);
 }
 
-.house-shelf {
-  right: 12%;
-  top: 34%;
-  width: 156px;
+.window-shape i,
+.window-shape b {
+  width: 46px;
   height: 18px;
   border-radius: 999px;
-  background: #e7b777;
-  box-shadow: 0 18px 0 #f8d79c;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.window-shape i {
+  left: 20px;
+  top: 22px;
+}
+
+.window-shape b {
+  right: 24px;
+  top: 54px;
+}
+
+.wall-lamp {
+  left: 10%;
+  top: 35%;
+  z-index: 2;
+  width: 34px;
+  height: 42px;
+  border-radius: 18px 18px 26px 26px;
+  background: #ffd9a8;
+  box-shadow:
+    0 0 32px rgba(255, 217, 168, 0.72),
+    0 -16px 0 -12px #ac7750;
+}
+
+.soft-sofa {
+  left: 8%;
+  bottom: 20%;
+  z-index: 2;
+  width: 180px;
+  height: 86px;
+  border-radius: 38px 38px 24px 24px;
+  background: #f5b7ad;
+  box-shadow:
+    inset 0 -16px 0 rgba(191, 92, 86, 0.08),
+    0 16px 26px rgba(94, 61, 51, 0.1);
+}
+
+.soft-sofa i {
+  left: 26px;
+  bottom: 28px;
+  width: 54px;
+  height: 48px;
+  border-radius: 18px;
+  background: #ffe6b7;
+  transform: rotate(-6deg);
+}
+
+.pet-bed {
+  left: 35%;
+  bottom: 17%;
+  z-index: 2;
+  width: 210px;
+  height: 72px;
+  border-radius: 52px;
+  background: #d9ead8;
+  box-shadow:
+    inset 0 -14px 0 rgba(80, 130, 97, 0.08),
+    0 18px 28px rgba(62, 84, 57, 0.12);
+  transform: translateX(-50%);
+}
+
+.pet-bed i {
+  left: 36px;
+  top: -18px;
+  width: 78px;
+  height: 48px;
+  border-radius: 22px;
+  background: #fff0c9;
+  transform: rotate(-7deg);
+}
+
+.pet-bed b {
+  right: 40px;
+  top: -12px;
+  width: 58px;
+  height: 40px;
+  border-radius: 18px;
+  background: #c8ddf1;
+  transform: rotate(8deg);
+}
+
+.cat-tree {
+  right: 9%;
+  bottom: 19%;
+  z-index: 2;
+  width: 150px;
+  height: 238px;
+}
+
+.cat-tree::before,
+.cat-tree::after {
+  position: absolute;
+  left: 67px;
+  width: 16px;
+  border-radius: 999px;
+  background: #c79262;
+  content: "";
+}
+
+.cat-tree::before {
+  bottom: 0;
+  height: 190px;
+}
+
+.cat-tree::after {
+  bottom: 72px;
+  height: 120px;
+  transform: rotate(-36deg);
+  transform-origin: bottom center;
+}
+
+.cat-tree i,
+.cat-tree b,
+.cat-tree em {
+  left: 50%;
+  width: 124px;
+  height: 30px;
+  border-radius: 999px;
+  background: #f0c18b;
+  box-shadow: 0 10px 18px rgba(99, 63, 43, 0.12);
+  transform: translateX(-50%);
+}
+
+.cat-tree i {
+  bottom: 8px;
+}
+
+.cat-tree b {
+  bottom: 106px;
+  width: 112px;
+}
+
+.cat-tree em {
+  bottom: 184px;
+  width: 96px;
+}
+
+.toy-ball {
+  right: 27%;
+  bottom: 18%;
+  z-index: 3;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background:
+    linear-gradient(90deg, transparent 43%, rgba(255, 255, 255, 0.58) 43% 57%, transparent 57%),
+    #f8a9aa;
+  box-shadow: 0 8px 16px rgba(94, 61, 51, 0.12);
+}
+
+.toy-mouse {
+  right: 32%;
+  bottom: 15%;
+  z-index: 3;
+  width: 52px;
+  height: 24px;
+  border-radius: 50% 48% 42% 50%;
+  background: #c8ddf1;
+  transform: rotate(-8deg);
+}
+
+.toy-mouse::after {
+  position: absolute;
+  right: -18px;
+  top: 10px;
+  width: 24px;
+  height: 12px;
+  border-top: 3px solid #8faec8;
+  border-radius: 50%;
+  content: "";
+}
+
+.fish-mobile {
+  right: 28%;
+  top: 25%;
+  z-index: 3;
+  width: 88px;
+  height: 110px;
+  border-left: 2px dashed rgba(83, 115, 110, 0.28);
+  animation: hangingSwing 5.8s ease-in-out infinite;
+}
+
+.fish-mobile i,
+.fish-mobile b {
+  left: 16px;
+  width: 48px;
+  height: 24px;
+  border-radius: 50% 42% 42% 50%;
+  background: #ffc87e;
+}
+
+.fish-mobile i {
+  top: 44px;
+}
+
+.fish-mobile b {
+  top: 74px;
+  left: 28px;
+  transform: scale(0.74) rotate(12deg);
+}
+
+.fish-mobile i::after,
+.fish-mobile b::after {
+  position: absolute;
+  right: -11px;
+  top: 5px;
+  border-width: 7px 0 7px 13px;
+  border-style: solid;
+  border-color: transparent transparent transparent #ffc87e;
+  content: "";
+}
+
+.small-door {
+  right: 18%;
+  bottom: 0;
+  z-index: 1;
+  width: 88px;
+  height: 142px;
+  border-radius: 44px 44px 0 0;
+  background: #bf8a5f;
+  box-shadow: inset 0 0 0 7px rgba(255, 238, 208, 0.32);
+}
+
+.small-door::after {
+  position: absolute;
+  right: 18px;
+  top: 72px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ffe6a9;
+  content: "";
+}
+
+.wood-cabinet {
+  left: 15%;
+  bottom: 7%;
+  z-index: 2;
+  width: 132px;
+  height: 76px;
+  border-radius: 20px 20px 12px 12px;
+  background: #d49b65;
+  box-shadow: inset 0 -12px 0 rgba(88, 54, 38, 0.08);
+}
+
+.wood-cabinet i,
+.wood-cabinet b {
+  top: 18px;
+  width: 48px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(255, 240, 213, 0.22);
+}
+
+.wood-cabinet i {
+  left: 16px;
+}
+
+.wood-cabinet b {
+  right: 16px;
 }
 
 .plant {
@@ -595,23 +1053,36 @@ input[type="text"]:focus {
 }
 
 .plant-left {
-  left: 10%;
+  left: 4%;
 }
 
 .plant-right {
-  right: 10%;
+  right: 5%;
   transform: scale(0.8);
 }
 
 .floor-rug {
   left: 50%;
-  bottom: 8%;
-  width: min(68vw, 620px);
-  height: 140px;
+  bottom: 9%;
+  z-index: 1;
+  width: min(62vw, 610px);
+  height: 150px;
   border-radius: 50%;
   background:
-    radial-gradient(ellipse at center, rgba(255, 248, 234, 0.96), rgba(255, 218, 141, 0.58) 64%, transparent 65%);
+    repeating-radial-gradient(ellipse at center, rgba(255, 248, 234, 0.98) 0 12px, rgba(255, 219, 173, 0.84) 13px 23px, rgba(211, 234, 216, 0.72) 24px 34px);
   transform: translateX(-50%);
+  box-shadow: 0 18px 24px rgba(91, 73, 48, 0.08);
+}
+
+.entry-mat {
+  right: 15%;
+  bottom: 6%;
+  z-index: 2;
+  width: 126px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(200, 221, 241, 0.86);
+  box-shadow: inset 0 -6px 0 rgba(90, 120, 140, 0.08);
 }
 
 .wall-star {
@@ -727,19 +1198,19 @@ input[type="text"]:focus {
 
 .side-actions {
   position: absolute;
-  z-index: 4;
+  z-index: 9;
   display: grid;
   gap: 12px;
 }
 
 .left-actions {
-  left: 26px;
-  top: 35%;
+  left: 24px;
+  top: 30%;
 }
 
 .right-actions {
-  right: 26px;
-  top: 24px;
+  right: 24px;
+  top: 72px;
 }
 
 .side-actions button {
@@ -784,22 +1255,37 @@ input[type="text"]:focus {
 
 .home-pet-stage {
   position: absolute;
-  left: 50%;
-  bottom: 112px;
-  z-index: 3;
+  left: var(--room-x, 50%);
+  top: var(--room-y, 70%);
+  z-index: 7;
   display: grid;
   align-items: end;
   justify-items: center;
-  width: min(62vw, 470px);
-  transform: translateX(-50%);
+  width: clamp(210px, 28vw, 340px);
+  transform: translate(-50%, -100%);
+  transition:
+    left 1100ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    top 1100ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    width 320ms ease;
+  will-change: left, top;
+}
+
+.home-pet-stage.spot-foreground {
+  z-index: 11;
+  width: clamp(260px, 34vw, 390px);
+}
+
+.home-pet-stage.spot-window,
+.home-pet-stage.spot-catTree {
+  width: clamp(180px, 22vw, 270px);
 }
 
 .pet-character {
   --pet-scale: 1;
   position: relative;
   display: grid;
-  width: min(56vw, 340px);
-  min-width: 230px;
+  width: min(100%, 320px);
+  min-width: 0;
   aspect-ratio: 1;
   align-items: end;
   justify-items: center;
@@ -833,6 +1319,18 @@ input[type="text"]:focus {
 
 .pet-character.sad-small .home-pet-image {
   animation: petSadSmall 4.8s ease-in-out infinite;
+}
+
+.pet-character.room-wander .home-pet-image {
+  animation: petRoomWander 3.8s ease-in-out infinite;
+}
+
+.pet-character.room-watch .home-pet-image {
+  animation: petRoomWatch 5.2s ease-in-out infinite;
+}
+
+.pet-character.room-talk .home-pet-image {
+  animation: petRoomTalk 1.8s ease-in-out infinite;
 }
 
 .pet-character.is-fed {
@@ -1392,6 +1890,54 @@ input[type="text"]:focus {
   }
 }
 
+@keyframes cloudDrift {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 16px -3px;
+  }
+}
+
+@keyframes sunbeamDrift {
+  0%,
+  100% {
+    opacity: 0.44;
+    translate: 0 0;
+  }
+
+  50% {
+    opacity: 0.68;
+    translate: 18px 8px;
+  }
+}
+
+@keyframes sunSpotFloat {
+  0%,
+  100% {
+    opacity: 0.46;
+    transform: translateX(0) scale(1);
+  }
+
+  50% {
+    opacity: 0.72;
+    transform: translateX(16px) scale(1.08);
+  }
+}
+
+@keyframes hangingSwing {
+  0%,
+  100% {
+    rotate: -2deg;
+  }
+
+  50% {
+    rotate: 2.6deg;
+  }
+}
+
 @keyframes generateProgress {
   from {
     transform: scaleX(0);
@@ -1465,6 +2011,43 @@ input[type="text"]:focus {
   50% {
     scale: 0.98;
     translate: 0 1px;
+  }
+}
+
+@keyframes petRoomWander {
+  0%,
+  100% {
+    translate: -6px 0;
+  }
+
+  50% {
+    translate: 7px -4px;
+  }
+}
+
+@keyframes petRoomWatch {
+  0%,
+  100% {
+    rotate: -1deg;
+    translate: 0 0;
+  }
+
+  50% {
+    rotate: 2deg;
+    translate: 0 -3px;
+  }
+}
+
+@keyframes petRoomTalk {
+  0%,
+  100% {
+    scale: 1;
+    translate: 0 0;
+  }
+
+  50% {
+    scale: 1.035;
+    translate: 0 -6px;
   }
 }
 
@@ -1641,12 +2224,12 @@ input[type="text"]:focus {
 
   .left-actions {
     left: 12px;
-    top: 100px;
+    top: 102px;
   }
 
   .right-actions {
     right: 12px;
-    top: 100px;
+    top: 102px;
   }
 
   .side-actions {
@@ -1662,13 +2245,12 @@ input[type="text"]:focus {
   }
 
   .home-pet-stage {
-    bottom: 122px;
-    width: 86vw;
+    width: min(58vw, 260px);
   }
 
   .pet-character {
-    width: min(80vw, 300px);
-    min-width: 210px;
+    width: min(100%, 260px);
+    min-width: 0;
   }
 
   .status-bubble {
@@ -1696,9 +2278,47 @@ input[type="text"]:focus {
     left: 4%;
   }
 
-  .plant-right,
-  .house-shelf {
+  .cat-tree,
+  .soft-sofa,
+  .fish-mobile,
+  .plant-right {
     display: none;
+  }
+
+  .attic-roof::before,
+  .attic-roof::after {
+    height: 54%;
+  }
+
+  .skylight {
+    top: 8%;
+    width: 110px;
+    height: 56px;
+  }
+
+  .window-shape {
+    left: 24%;
+    top: 32%;
+    width: 118px;
+    height: 92px;
+    border-width: 7px;
+  }
+
+  .pet-bed {
+    left: 35%;
+    bottom: 19%;
+    width: 150px;
+    height: 56px;
+  }
+
+  .toy-ball {
+    right: 15%;
+    bottom: 20%;
+  }
+
+  .wood-cabinet,
+  .small-door {
+    opacity: 0.72;
   }
 
   .pet-actions {

@@ -9,6 +9,7 @@ import { hasMeaningfulTransparency } from './services/imageTransparency'
 import { resolveLifeStage, resolveLifeVisual } from './services/lifeVisualResolver'
 import { getLocalChatReply, quickChatQuestions, type QuickChatQuestion } from './services/localChatService'
 import { clearSoulPetCharacter, clearSoulPetImageCache, loadSoulPetCharacter, saveSoulPetCharacter } from './services/petStorage'
+import { defaultRoomSpot, getApproachSpot, getNextRoomBehaviorDelay, resolveNextRoomSpot, resolveRoomActivityText, type PetRoomSpot } from './services/petRoomBehaviorService'
 import { getTimeContext } from './services/timeContext'
 import type { CharacterKind, CharacterSource, SoulPetCharacter } from './types/soulPet'
 
@@ -139,13 +140,18 @@ const App = () => {
   const [albumItems, setAlbumItems] = useState<AlbumItem[]>(() => loadAlbumItems())
   const [activeAccessory, setActiveAccessory] = useState<AccessoryId>(() => loadActiveAccessory())
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [roomSpot, setRoomSpot] = useState<PetRoomSpot>(defaultRoomSpot)
+  const [roomActivityText, setRoomActivityText] = useState('')
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const activeStatusTimerRef = useRef<number | undefined>(undefined)
   const activeStatusClearRef = useRef<number | undefined>(undefined)
+  const roomBehaviorTimerRef = useRef<number | undefined>(undefined)
+  const roomActivityClearRef = useRef<number | undefined>(undefined)
   const isDebug = new URLSearchParams(window.location.search).get('debug') === '1'
 
   const timeContext = useMemo(() => getTimeContext(), [character?.lastUpdatedAt, route])
-  const lifeVisual = character ? resolveLifeVisual(character, timeContext, bubbleOverride) : null
+  const displayedBubbleOverride = roomActivityText || bubbleOverride
+  const lifeVisual = character ? resolveLifeVisual(character, timeContext, displayedBubbleOverride) : null
   const activeImage = getActiveImage(character)
   const growthStage = character ? getGrowthStage(character) : ''
   const companionDays = character ? getCompanionDays(character) : 1
@@ -298,6 +304,28 @@ const App = () => {
 
   useEffect(() => {
     if (route !== '/home' || !character) return
+
+    const scheduleRoomBehavior = () => {
+      const delay = getNextRoomBehaviorDelay()
+      roomBehaviorTimerRef.current = window.setTimeout(() => {
+        const nextSpot = resolveNextRoomSpot(character, timeContext)
+        setRoomSpot(nextSpot)
+        setRoomActivityText(resolveRoomActivityText(nextSpot, character))
+        roomActivityClearRef.current = window.setTimeout(() => setRoomActivityText(''), 5200)
+        scheduleRoomBehavior()
+      }, delay)
+    }
+
+    scheduleRoomBehavior()
+
+    return () => {
+      window.clearTimeout(roomBehaviorTimerRef.current)
+      window.clearTimeout(roomActivityClearRef.current)
+    }
+  }, [route, character?.id, character?.bond, character?.mood, character?.satiety, character?.energy, timeContext.timePeriod])
+
+  useEffect(() => {
+    if (route !== '/home' || !character) return
     setAlbumItems(recordFirstHomeAlbum(activeImage))
   }, [route, character?.id, activeImage])
 
@@ -444,13 +472,39 @@ const App = () => {
       }),
       lastFedAt: new Date().toISOString()
     })
+    setRoomSpot(defaultRoomSpot)
     setDiaryEntries(recordFirstFeedDiary())
     showFeedback('feed', '好好吃，谢谢你！')
   }
 
   const handlePet = () => {
     if (!character) return
-    if (character.lastPettedAt && Date.now() - new Date(character.lastPettedAt).getTime() < 5000) return
+    const stage = resolveLifeStage(character.bond).name
+    const approachText =
+      roomSpot.activity === 'sleep' || lifeVisual?.shouldShowSleepBubble
+        ? '唔……我醒啦。'
+        : stage === '初遇期'
+          ? '你是在叫我吗？'
+          : stage === '熟悉期'
+            ? '我来啦。'
+            : stage === '依恋期'
+              ? '我一直在这里。'
+              : '我最喜欢你叫我啦。'
+
+    setRoomSpot(getApproachSpot())
+    setRoomActivityText('')
+    setHomePanel('chat')
+    setChatMessages((current) => [
+      ...current,
+      { id: crypto.randomUUID(), speaker: 'pet', text: approachText }
+    ])
+    setBubbleOverride(approachText)
+
+    if (character.lastPettedAt && Date.now() - new Date(character.lastPettedAt).getTime() < 5000) {
+      window.setTimeout(() => setBubbleOverride(''), 3000)
+      return
+    }
+
     setCharacter({
       ...updateLifeValue(character, {
         mood: character.mood + 3,
@@ -459,7 +513,7 @@ const App = () => {
       lastPettedAt: new Date().toISOString()
     })
     setDiaryEntries(recordFirstPetDiary())
-    showFeedback('pet', '再摸一下也可以哦。')
+    showFeedback('pet', approachText)
   }
 
   const clearLocalData = async () => {
@@ -848,10 +902,59 @@ const App = () => {
       return <main className="app-page"><section className="placeholder-layout"><p className="eyebrow">SoulPet Home</p><h1>还没有 SoulPet</h1><p className="subtitle compact">先创建一个属于你的数字生命。</p><a className="primary-action form-action" href="/create" onClick={(event) => handleRouteLink(event, '/create')}>创建我的 SoulPet</a></section></main>
     }
 
+    const roomAnimationClass =
+      roomSpot.activity === 'sleep'
+        ? 'sleepy-float'
+        : roomSpot.activity === 'play'
+          ? 'happy-bounce'
+          : roomSpot.activity === 'wander'
+            ? 'room-wander'
+            : roomSpot.activity === 'watch'
+              ? 'room-watch'
+              : roomSpot.activity === 'talk'
+                ? 'room-talk'
+                : lifeVisual?.animationClass || ''
+    const petStageStyle = {
+      '--room-x': `${roomSpot.x}%`,
+      '--room-y': `${roomSpot.y}%`
+    } as CSSProperties
+    const petScale = (lifeVisual?.petScale || 1) * roomSpot.scale
+    const showSleepBubble = lifeVisual?.shouldShowSleepBubble || roomSpot.activity === 'sleep'
+
     return (
-      <main className={`app-page pet-home-page ${timeContext.sceneClass} ${lifeVisual?.animationClass === 'sleepy-float' ? 'is-sleepy' : ''}`}>
+      <main className={`app-page pet-home-page ${timeContext.sceneClass} ${showSleepBubble ? 'is-sleepy' : ''}`}>
         <section className="pet-home-layout" aria-label="SoulPet 小家">
-          <div className="home-scene" aria-hidden="true"><span className="cloud cloud-one" /><span className="cloud cloud-two" /><span className="window-shape" /><span className="house-shelf" /><span className="plant plant-left" /><span className="plant plant-right" /><span className="floor-rug" /><span className="wall-star star-one" /><span className="wall-star star-two" /><span className="ambient-icon">{timeContext.ambientIcon}</span></div>
+          <div className="home-scene" aria-hidden="true">
+            <span className="attic-roof" />
+            <span className="roof-beam beam-left" />
+            <span className="roof-beam beam-right" />
+            <span className="skylight"><i /></span>
+            <span className="vine vine-left" />
+            <span className="vine vine-right" />
+            <span className="sunbeam sunbeam-one" />
+            <span className="sunbeam sunbeam-two" />
+            <span className="sun-spot spot-one" />
+            <span className="sun-spot spot-two" />
+            <span className="cloud cloud-one" />
+            <span className="cloud cloud-two" />
+            <span className="window-shape"><i /><b /></span>
+            <span className="wall-lamp" />
+            <span className="soft-sofa"><i /></span>
+            <span className="pet-bed"><i /><b /></span>
+            <span className="cat-tree"><i /><b /><em /></span>
+            <span className="toy-ball" />
+            <span className="toy-mouse" />
+            <span className="fish-mobile"><i /><b /></span>
+            <span className="small-door" />
+            <span className="wood-cabinet"><i /><b /></span>
+            <span className="plant plant-left" />
+            <span className="plant plant-right" />
+            <span className="floor-rug" />
+            <span className="entry-mat" />
+            <span className="wall-star star-one" />
+            <span className="wall-star star-two" />
+            <span className="ambient-icon">{timeContext.ambientIcon}</span>
+          </div>
           <div className="game-status-bar">
             <div className="mini-avatar" aria-hidden="true">{activeImage ? <img alt="" src={activeImage} /> : <div className="mini-q-pet"><span /></div>}</div>
             <div className="status-meta">
@@ -863,12 +966,12 @@ const App = () => {
           </div>
           <div className="side-actions left-actions" aria-label="小家功能"><button onClick={() => setHomePanel('diary')}>成长日记</button><button onClick={() => setHomePanel('album')}>相册</button><button onClick={() => { setBubbleOverride('伙伴功能开发中'); window.setTimeout(() => setBubbleOverride(''), 2200) }}>伙伴</button></div>
           <div className="side-actions right-actions" aria-label="轻量设置"><button onClick={() => { setBubbleOverride('设置功能开发中'); window.setTimeout(() => setBubbleOverride(''), 2200) }}>设置</button><button className={isBgmPlaying ? 'is-playing' : ''} onClick={toggleBgm}>{isBgmPlaying ? '播放中' : '音乐'}{isBgmPlaying && <span className="music-note" aria-hidden="true">♪</span>}</button><button onClick={() => setHomePanel('help')}>帮助</button></div>
-          <div className="home-pet-stage" aria-label={`${character.name} 的小家`}>
+          <div className={`home-pet-stage spot-${roomSpot.id} activity-${roomSpot.activity}`} style={petStageStyle} aria-label={`${character.name} 的小家`}>
             <div className="status-bubble">{lifeVisual?.bubbleText}</div>
-            {lifeVisual?.shouldShowSleepBubble && <div className="zzz">Zzz</div>}
+            {showSleepBubble && <div className="zzz">Zzz</div>}
             {lifeVisual?.shouldShowHungerHint && <div className="hunger-hint" aria-hidden="true">🍙</div>}
             {lifeVisual?.shouldShowLonelyHint && <div className="lonely-hint" aria-hidden="true">♡</div>}
-            <button className={`pet-character ${lifeVisual?.animationClass || ''} ${feedback === 'pet' ? 'is-petted' : ''} ${feedback === 'feed' ? 'is-fed' : ''}`} style={{ '--pet-scale': lifeVisual?.petScale || 1 } as CSSProperties} onClick={handlePet} aria-label={`抚摸 ${character.name}`}>
+            <button className={`pet-character ${roomAnimationClass} ${feedback === 'pet' ? 'is-petted' : ''} ${feedback === 'feed' ? 'is-fed' : ''}`} style={{ '--pet-scale': petScale } as CSSProperties} onClick={handlePet} aria-label={`抚摸 ${character.name}`}>
               {activeAccessory !== 'none' && <span className={`pet-accessory accessory-${activeAccessory}`} aria-label={selectedAccessory.name}>{selectedAccessory.icon}</span>}
               {activeImage ? <img alt={character.name} className="home-pet-image" src={activeImage} onError={(event) => { event.currentTarget.style.display = 'none' }} /> : <img alt={character.name} className="home-pet-image" src={createDefaultPetImage(character.kind)} />}
             </button>
