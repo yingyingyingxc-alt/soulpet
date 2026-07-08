@@ -1,11 +1,16 @@
-import { ChangeEvent, FormEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { ChangeEvent, CSSProperties, FormEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { applyOfflineLifeSettlement, createInitialLifeValues, getCompanionDays, getGrowthStage, updateLifeValue } from './config/lifeSystem'
+import { accessoryOptions, getAccessoryOption, loadActiveAccessory, saveActiveAccessory, type AccessoryId } from './services/accessoryService'
+import { clearAlbumItems, loadAlbumItems, recordAccessoryAlbum, recordBirthAlbum, recordFirstHomeAlbum, type AlbumItem } from './services/albumService'
+import { getNextActiveMomentDelay, resolveActiveMoment } from './services/activeMomentService'
+import { clearDiaryEntries, loadDiaryEntries, recordBirthDiary, recordFirstAccessoryDiary, recordFirstChatDiary, recordFirstFeedDiary, recordFirstPetDiary, recordReturnDiary, recordStageDiary, type DiaryEntry } from './services/growthDiaryService'
 import { generatePetWithAI, removeCharacterBackgroundWithAI } from './services/imageApi'
 import { hasMeaningfulTransparency } from './services/imageTransparency'
+import { resolveLifeStage, resolveLifeVisual } from './services/lifeVisualResolver'
+import { getLocalChatReply, quickChatQuestions, type QuickChatQuestion } from './services/localChatService'
 import { clearSoulPetCharacter, clearSoulPetImageCache, loadSoulPetCharacter, saveSoulPetCharacter } from './services/petStorage'
-import { resolvePetState } from './services/petStateResolver'
 import { getTimeContext } from './services/timeContext'
-import type { ActiveCharacterImageType, CharacterKind, CharacterSource, SoulPetCharacter } from './types/soulPet'
+import type { CharacterKind, CharacterSource, SoulPetCharacter } from './types/soulPet'
 
 type Route = '/' | '/create' | '/birth' | '/home' | '/chat' | '/memory' | '/profile'
 type Personality = '温柔' | '活泼' | '傲娇' | '治愈'
@@ -20,7 +25,8 @@ const characterKinds: Record<CharacterSource, CharacterKind[]> = {
 const personalities: Personality[] = ['温柔', '活泼', '傲娇', '治愈']
 const bgmStorageKey = 'soulpet_bgm_enabled'
 const bgmPath = '/audio/soulpet-home.mp3'
-const activeStatusTexts = ['偷偷看了你一眼', '在小家里转了一圈', '轻轻蹭了蹭你', '好像有话想说', '正在发呆']
+type HomePanel = 'diary' | 'album' | 'chat' | 'dressup' | 'help' | null
+type ChatMessage = { id: string; speaker: 'user' | 'pet'; text: string }
 
 const getCurrentRoute = (): Route => {
   const path = window.location.pathname
@@ -40,6 +46,14 @@ const readFileAsDataURL = (file: File): Promise<string> =>
     reader.onerror = () => reject(new Error('图片读取失败'))
     reader.readAsDataURL(file)
   })
+
+const formatDisplayDate = (value: string): string =>
+  new Intl.DateTimeFormat('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(value))
 
 const createDefaultPetImage = (kind: CharacterKind): string => {
   const colors = {
@@ -83,6 +97,7 @@ const createCharacter = (
     personality,
     originalImage,
     activeCharacterImageType: source === '现实宠物' ? 'generated' : 'original',
+    activeAccessory: 'none',
     createdAt: now,
     lastUpdatedAt: now,
     lastVisitedAt: now,
@@ -119,16 +134,22 @@ const App = () => {
   const [simulateCutoutFailure, setSimulateCutoutFailure] = useState(false)
   const [isBgmEnabled, setIsBgmEnabled] = useState(() => localStorage.getItem(bgmStorageKey) !== 'false')
   const [isBgmPlaying, setIsBgmPlaying] = useState(false)
+  const [homePanel, setHomePanel] = useState<HomePanel>(null)
+  const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>(() => loadDiaryEntries())
+  const [albumItems, setAlbumItems] = useState<AlbumItem[]>(() => loadAlbumItems())
+  const [activeAccessory, setActiveAccessory] = useState<AccessoryId>(() => loadActiveAccessory())
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const activeStatusTimerRef = useRef<number | undefined>(undefined)
   const activeStatusClearRef = useRef<number | undefined>(undefined)
   const isDebug = new URLSearchParams(window.location.search).get('debug') === '1'
 
   const timeContext = useMemo(() => getTimeContext(), [character?.lastUpdatedAt, route])
-  const resolvedState = character ? resolvePetState(character, timeContext, bubbleOverride) : null
+  const lifeVisual = character ? resolveLifeVisual(character, timeContext, bubbleOverride) : null
   const activeImage = getActiveImage(character)
   const growthStage = character ? getGrowthStage(character) : ''
   const companionDays = character ? getCompanionDays(character) : 1
+  const selectedAccessory = getAccessoryOption(activeAccessory)
 
   useEffect(() => {
     const handlePopState = () => setRoute(getCurrentRoute())
@@ -142,7 +163,11 @@ const App = () => {
 
   useEffect(() => {
     void loadSoulPetCharacter().then((stored) => {
-      if (stored) setCharacter(applyOfflineLifeSettlement(stored))
+      if (stored) {
+        const storedAccessory = stored.activeAccessory || loadActiveAccessory()
+        setActiveAccessory(storedAccessory)
+        setCharacter(applyOfflineLifeSettlement({ ...stored, activeAccessory: storedAccessory }))
+      }
     })
   }, [])
 
@@ -217,25 +242,28 @@ const App = () => {
     const awayHours = Math.max(0, (now.getTime() - lastVisitedAt.getTime()) / 3600000)
     if (awayHours < 0.01) return
 
-    const reunionText =
-      awayHours >= 24
-        ? '昨天没有见到你，有一点想你。'
-        : awayHours >= 6
-          ? '你回来啦，我等你好久啦。'
-          : ''
+    const reunion =
+      awayHours >= 72
+        ? { text: '我还以为你不会回来了……但你回来真好。', mood: 10, bond: 3, diary: '离开了好几天，它一直在等你回家。' }
+        : awayHours >= 24
+          ? { text: '昨天没有见到你，有一点想你。', mood: 8, bond: 2, diary: '昨天没有见到你，它有一点想你。' }
+          : awayHours >= 6
+            ? { text: '你回来啦，我等你好久啦。', mood: 5, bond: 1, diary: '隔了好久再见面，它立刻认出了你。' }
+            : null
 
-    if (reunionText) {
-      setBubbleOverride(reunionText)
+    if (reunion) {
+      setBubbleOverride(reunion.text)
+      setDiaryEntries(recordReturnDiary(reunion.diary))
       window.setTimeout(() => setBubbleOverride(''), 5000)
     }
 
     setCharacter((current) => {
       if (!current || current.id !== character.id) return current
       const visitedUpdate = { ...current, lastVisitedAt: now.toISOString() }
-      return reunionText
+      return reunion
         ? updateLifeValue(visitedUpdate, {
-            mood: visitedUpdate.mood + 5,
-            bond: visitedUpdate.bond + 1
+            mood: visitedUpdate.mood + reunion.mood,
+            bond: visitedUpdate.bond + reunion.bond
           })
         : visitedUpdate
     })
@@ -245,9 +273,13 @@ const App = () => {
     if (route !== '/home' || !character) return
 
     const scheduleActiveStatus = () => {
-      const delay = 30000 + Math.floor(Math.random() * 30000)
+      const delay = getNextActiveMomentDelay()
       activeStatusTimerRef.current = window.setTimeout(() => {
-        const text = activeStatusTexts[Math.floor(Math.random() * activeStatusTexts.length)]
+        const text = resolveActiveMoment(character, resolveLifeStage(character.bond))
+        if (!text) {
+          scheduleActiveStatus()
+          return
+        }
         setBubbleOverride(text)
         activeStatusClearRef.current = window.setTimeout(() => {
           setBubbleOverride('')
@@ -262,7 +294,19 @@ const App = () => {
       window.clearTimeout(activeStatusTimerRef.current)
       window.clearTimeout(activeStatusClearRef.current)
     }
-  }, [route, character?.id])
+  }, [route, character?.id, character?.bond, character?.mood, character?.satiety, character?.energy])
+
+  useEffect(() => {
+    if (route !== '/home' || !character) return
+    setAlbumItems(recordFirstHomeAlbum(activeImage))
+  }, [route, character?.id, activeImage])
+
+  useEffect(() => {
+    if (!character) return
+    const stage = resolveLifeStage(character.bond)
+    if (stage.name === '初遇期') return
+    setDiaryEntries(recordStageDiary(stage))
+  }, [character?.bond, character?.id])
 
   const navigate = (nextRoute: Route) => {
     window.history.pushState({}, '', nextRoute)
@@ -309,6 +353,7 @@ const App = () => {
     event.preventDefault()
     const nextCharacter = createCharacter(name, source, kind, personality, uploadedImage || undefined)
     setCharacter(nextCharacter)
+    setDiaryEntries(recordBirthDiary())
     setBirthError('')
     setProcessedPreview('')
     setBirthStatus(source === '现实宠物' ? 'preparing' : 'preview')
@@ -331,6 +376,7 @@ const App = () => {
     setIsBusy(false)
     if (result.image) {
       setCharacter({ ...character, generatedPetImage: result.image, activeCharacterImageType: 'generated' })
+      setAlbumItems(recordBirthAlbum(result.image))
       setBirthStatus('success')
     } else {
       setBirthError(result.error || '生成失败，可以重试或暂时使用原图。')
@@ -366,18 +412,21 @@ const App = () => {
       processedCharacterImage: processedPreview,
       activeCharacterImageType: 'processed'
     })
+    setAlbumItems(recordBirthAlbum(processedPreview))
     setBirthStatus('success')
   }
 
   const chooseOriginalImage = () => {
     if (!character) return
     setCharacter({ ...character, activeCharacterImageType: 'original' })
+    setAlbumItems(recordBirthAlbum(character.originalImage))
     setBirthStatus('success')
   }
 
   const useOriginalForRealPet = () => {
     if (!character) return
     setCharacter({ ...character, activeCharacterImageType: 'original' })
+    setAlbumItems(recordBirthAlbum(character.originalImage))
     setBirthStatus('success')
   }
 
@@ -395,6 +444,7 @@ const App = () => {
       }),
       lastFedAt: new Date().toISOString()
     })
+    setDiaryEntries(recordFirstFeedDiary())
     showFeedback('feed', '好好吃，谢谢你！')
   }
 
@@ -408,6 +458,7 @@ const App = () => {
       }),
       lastPettedAt: new Date().toISOString()
     })
+    setDiaryEntries(recordFirstPetDiary())
     showFeedback('pet', '再摸一下也可以哦。')
   }
 
@@ -440,6 +491,154 @@ const App = () => {
       lastVisitedAt: new Date(Date.now() - hours * 3600000).toISOString(),
       lastUpdatedAt: new Date(Date.now() - hours * 3600000).toISOString()
     })
+  }
+
+  const openChatPanel = () => {
+    if (!character) return
+    setHomePanel('chat')
+
+    if (lifeVisual?.shouldShowSleepBubble) {
+      const text = '它已经睡着啦，明天再来找它吧。'
+      setBubbleOverride(text)
+      setChatMessages([{ id: crypto.randomUUID(), speaker: 'pet', text }])
+      window.setTimeout(() => setBubbleOverride(''), 3200)
+      return
+    }
+
+    setChatMessages((current) =>
+      current.length > 0
+        ? current
+        : [{ id: crypto.randomUUID(), speaker: 'pet', text: '你来啦，要和我说说话吗？' }]
+    )
+  }
+
+  const handleChatQuestion = (question: QuickChatQuestion) => {
+    if (!character) return
+    const reply = getLocalChatReply(question, character, timeContext)
+    setChatMessages((current) => [
+      ...current,
+      { id: crypto.randomUUID(), speaker: 'user', text: question },
+      { id: crypto.randomUUID(), speaker: 'pet', text: reply }
+    ])
+    setDiaryEntries(recordFirstChatDiary())
+    setBubbleOverride(reply)
+    window.setTimeout(() => setBubbleOverride(''), 3600)
+  }
+
+  const handleAccessorySelect = (accessory: AccessoryId) => {
+    if (!character) return
+    const option = getAccessoryOption(accessory)
+    setActiveAccessory(accessory)
+    saveActiveAccessory(accessory)
+    setCharacter({ ...character, activeAccessory: accessory })
+
+    if (accessory === 'none') {
+      setBubbleOverride('换回轻轻松松的样子啦。')
+      window.setTimeout(() => setBubbleOverride(''), 2400)
+      return
+    }
+
+    setDiaryEntries(recordFirstAccessoryDiary())
+    setAlbumItems(recordAccessoryAlbum(option.name, activeImage))
+    setBubbleOverride(`${option.name} 很适合我吗？`)
+    window.setTimeout(() => setBubbleOverride(''), 2600)
+  }
+
+  const resetAccessory = () => {
+    saveActiveAccessory('none')
+    setActiveAccessory('none')
+    if (character) setCharacter({ ...character, activeAccessory: 'none' })
+  }
+
+  const renderHomePanel = () => {
+    if (!homePanel) return null
+
+    const panelTitle = {
+      diary: '成长日记',
+      album: '回忆相册',
+      chat: '和它说话',
+      dressup: '选择装扮',
+      help: '小家说明'
+    }[homePanel]
+
+    return (
+      <div className="home-modal-backdrop" role="presentation" onClick={() => setHomePanel(null)}>
+        <section className={`home-modal home-modal-${homePanel}`} role="dialog" aria-modal="true" aria-label={panelTitle} onClick={(event) => event.stopPropagation()}>
+          <div className="home-modal-header">
+            <h2>{panelTitle}</h2>
+            <button aria-label="关闭" onClick={() => setHomePanel(null)}>×</button>
+          </div>
+
+          {homePanel === 'diary' && (
+            <div className="diary-list">
+              {diaryEntries.length === 0 ? (
+                <p className="empty-panel-text">还没有记录，和它一起生活一会儿吧。</p>
+              ) : (
+                diaryEntries.map((entry) => (
+                  <article className="diary-entry" key={entry.id}>
+                    <time>{formatDisplayDate(entry.date)}</time>
+                    <h3>{entry.title}</h3>
+                    <p>{entry.content}</p>
+                  </article>
+                ))
+              )}
+            </div>
+          )}
+
+          {homePanel === 'album' && (
+            <div className="album-grid">
+              {albumItems.length === 0 ? (
+                <p className="empty-panel-text">还没有照片，先和它创造第一段回忆吧。</p>
+              ) : (
+                albumItems.map((item) => (
+                  <article className="album-card" key={item.id}>
+                    <div className="album-image">{item.image ? <img alt={item.title} src={item.image} /> : <span>🏠</span>}</div>
+                    <time>{formatDisplayDate(item.date)}</time>
+                    <h3>{item.title}</h3>
+                    <p>{item.description}</p>
+                  </article>
+                ))
+              )}
+            </div>
+          )}
+
+          {homePanel === 'chat' && (
+            <div className="chat-panel-content">
+              <div className="chat-messages">
+                {chatMessages.map((message) => (
+                  <p className={`chat-message ${message.speaker}`} key={message.id}>
+                    {message.text}
+                  </p>
+                ))}
+              </div>
+              <div className="quick-chat-grid">
+                {quickChatQuestions.map((question) => (
+                  <button key={question} onClick={() => handleChatQuestion(question)}>{question}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {homePanel === 'dressup' && (
+            <div className="accessory-grid">
+              {accessoryOptions.map((option) => (
+                <button className={activeAccessory === option.id ? 'selected' : ''} key={option.id} onClick={() => handleAccessorySelect(option.id)}>
+                  <span>{option.icon}</span>
+                  {option.name}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {homePanel === 'help' && (
+            <div className="help-panel-content">
+              <p>每天回到小家，看看它的状态，投喂、摸摸、聊天都会让关系慢慢变近。</p>
+              <p>成长日记会自动记录你们的重要瞬间，相册会留下诞生和装扮回忆。</p>
+            </div>
+          )}
+        </section>
+      </div>
+    )
   }
 
   if (route === '/create') {
@@ -575,11 +774,57 @@ const App = () => {
   }
 
   if (route === '/chat') {
-    return <main className="app-page"><section className="placeholder-layout"><p className="eyebrow">SoulPet Chat</p><h1>聊天功能开发中</h1><button className="primary-action form-action" onClick={() => navigate('/home')}>返回 SoulPet Home</button></section></main>
+    if (!character) {
+      return <main className="app-page"><section className="placeholder-layout"><p className="eyebrow">SoulPet Chat</p><h1>还没有 SoulPet</h1><button className="primary-action form-action" onClick={() => navigate('/create')}>创建我的 SoulPet</button></section></main>
+    }
+
+    return (
+      <main className="app-page">
+        <section className="placeholder-layout chat-standalone">
+          <p className="eyebrow">SoulPet Chat</p>
+          <h1>和 {character.name} 说话</h1>
+          <div className="chat-panel-content">
+            <div className="chat-messages">
+              {(chatMessages.length > 0 ? chatMessages : [{ id: 'hello', speaker: 'pet' as const, text: '你来啦，要和我说说话吗？' }]).map((message) => (
+                <p className={`chat-message ${message.speaker}`} key={message.id}>{message.text}</p>
+              ))}
+            </div>
+            <div className="quick-chat-grid">
+              {quickChatQuestions.map((question) => (
+                <button key={question} onClick={() => handleChatQuestion(question)}>{question}</button>
+              ))}
+            </div>
+          </div>
+          <button className="primary-action form-action" onClick={() => navigate('/home')}>返回 SoulPet Home</button>
+        </section>
+      </main>
+    )
   }
 
   if (route === '/memory') {
-    return <main className="app-page"><section className="placeholder-layout"><p className="eyebrow">SoulPet Memory</p><h1>记忆功能开发中</h1><button className="primary-action form-action" onClick={() => navigate('/home')}>返回 SoulPet Home</button></section></main>
+    return (
+      <main className="app-page">
+        <section className="placeholder-layout">
+          <p className="eyebrow">SoulPet Memory</p>
+          <h1>回忆相册</h1>
+          <div className="album-grid standalone-album">
+            {albumItems.length === 0 ? (
+              <p className="empty-panel-text">还没有照片，先和它创造第一段回忆吧。</p>
+            ) : (
+              albumItems.map((item) => (
+                <article className="album-card" key={item.id}>
+                  <div className="album-image">{item.image ? <img alt={item.title} src={item.image} /> : <span>🏠</span>}</div>
+                  <time>{formatDisplayDate(item.date)}</time>
+                  <h3>{item.title}</h3>
+                  <p>{item.description}</p>
+                </article>
+              ))
+            )}
+          </div>
+          <button className="primary-action form-action" onClick={() => navigate('/home')}>返回 SoulPet Home</button>
+        </section>
+      </main>
+    )
   }
 
   if (route === '/profile') {
@@ -604,37 +849,50 @@ const App = () => {
     }
 
     return (
-      <main className={`app-page pet-home-page ${timeContext.sceneClass} ${resolvedState?.animationType === 'sleepy' ? 'is-sleepy' : ''}`}>
+      <main className={`app-page pet-home-page ${timeContext.sceneClass} ${lifeVisual?.animationClass === 'sleepy-float' ? 'is-sleepy' : ''}`}>
         <section className="pet-home-layout" aria-label="SoulPet 小家">
           <div className="home-scene" aria-hidden="true"><span className="cloud cloud-one" /><span className="cloud cloud-two" /><span className="window-shape" /><span className="house-shelf" /><span className="plant plant-left" /><span className="plant plant-right" /><span className="floor-rug" /><span className="wall-star star-one" /><span className="wall-star star-two" /><span className="ambient-icon">{timeContext.ambientIcon}</span></div>
           <div className="game-status-bar">
             <div className="mini-avatar" aria-hidden="true">{activeImage ? <img alt="" src={activeImage} /> : <div className="mini-q-pet"><span /></div>}</div>
-            <div className="status-meta"><strong>{character.name}</strong><span>❤️ 亲密度：{character.bond} · {growthStage}</span><small>陪伴第 {companionDays} 天　🍙 {character.satiety}　😊 {character.mood}　⚡ {character.energy}</small></div>
+            <div className="status-meta">
+              <strong>{character.name}</strong>
+              <span>❤️ 亲密度：{character.bond} · {lifeVisual?.lifeStage.label || growthStage}</span>
+              <small>陪伴第 {companionDays} 天　🍙 {character.satiety}　😊 {character.mood}　⚡ {character.energy}</small>
+            </div>
             <div className="status-progress" aria-hidden="true"><div style={{ width: `${character.bond}%` }} /></div>
           </div>
-          <div className="side-actions left-actions" aria-label="小家功能"><button onClick={() => navigate('/profile')}>成长日记</button><button>相册</button><button>伙伴</button></div>
-          <div className="side-actions right-actions" aria-label="轻量设置"><button>设置</button><button className={isBgmPlaying ? 'is-playing' : ''} onClick={toggleBgm}>{isBgmPlaying ? '播放中' : '音乐'}{isBgmPlaying && <span className="music-note" aria-hidden="true">♪</span>}</button><button>帮助</button></div>
+          <div className="side-actions left-actions" aria-label="小家功能"><button onClick={() => setHomePanel('diary')}>成长日记</button><button onClick={() => setHomePanel('album')}>相册</button><button onClick={() => { setBubbleOverride('伙伴功能开发中'); window.setTimeout(() => setBubbleOverride(''), 2200) }}>伙伴</button></div>
+          <div className="side-actions right-actions" aria-label="轻量设置"><button onClick={() => { setBubbleOverride('设置功能开发中'); window.setTimeout(() => setBubbleOverride(''), 2200) }}>设置</button><button className={isBgmPlaying ? 'is-playing' : ''} onClick={toggleBgm}>{isBgmPlaying ? '播放中' : '音乐'}{isBgmPlaying && <span className="music-note" aria-hidden="true">♪</span>}</button><button onClick={() => setHomePanel('help')}>帮助</button></div>
           <div className="home-pet-stage" aria-label={`${character.name} 的小家`}>
-            <div className="status-bubble">{resolvedState?.bubbleText}</div>
-            {resolvedState?.animationType === 'sleepy' && <div className="zzz">Zzz</div>}
-            <button className={`pet-character ${feedback === 'pet' ? 'is-petted' : ''} ${feedback === 'feed' ? 'is-fed' : ''}`} onClick={handlePet} aria-label={`抚摸 ${character.name}`}>
+            <div className="status-bubble">{lifeVisual?.bubbleText}</div>
+            {lifeVisual?.shouldShowSleepBubble && <div className="zzz">Zzz</div>}
+            {lifeVisual?.shouldShowHungerHint && <div className="hunger-hint" aria-hidden="true">🍙</div>}
+            {lifeVisual?.shouldShowLonelyHint && <div className="lonely-hint" aria-hidden="true">♡</div>}
+            <button className={`pet-character ${lifeVisual?.animationClass || ''} ${feedback === 'pet' ? 'is-petted' : ''} ${feedback === 'feed' ? 'is-fed' : ''}`} style={{ '--pet-scale': lifeVisual?.petScale || 1 } as CSSProperties} onClick={handlePet} aria-label={`抚摸 ${character.name}`}>
+              {activeAccessory !== 'none' && <span className={`pet-accessory accessory-${activeAccessory}`} aria-label={selectedAccessory.name}>{selectedAccessory.icon}</span>}
               {activeImage ? <img alt={character.name} className="home-pet-image" src={activeImage} onError={(event) => { event.currentTarget.style.display = 'none' }} /> : <img alt={character.name} className="home-pet-image" src={createDefaultPetImage(character.kind)} />}
             </button>
             {feedback !== 'none' && <div className={`feedback-particles ${feedback}`}><span>❤</span><span>{feedback === 'feed' ? '●' : '❤'}</span><span>❤</span></div>}
-            <div className="home-life-caption"><strong>{resolvedState?.moodIcon} {timeContext.timePeriod}</strong><span>{timeContext.greeting}</span></div>
+            <div className="home-life-caption"><strong>{lifeVisual?.statusIcon} {lifeVisual?.mainEmotion} · {timeContext.timePeriod}</strong><span>{timeContext.greeting}</span></div>
           </div>
-          <div className="pet-actions" aria-label="主互动"><button onClick={() => navigate('/chat')}>聊天</button><button onClick={handleFeed}>投喂</button><button onClick={() => { setBubbleOverride('装扮功能开发中'); window.setTimeout(() => setBubbleOverride(''), 2200) }}>装扮</button></div>
+          <div className="pet-actions" aria-label="主互动"><button onClick={openChatPanel}>聊天</button><button className={lifeVisual?.shouldShowHungerHint ? 'needs-attention' : ''} onClick={handleFeed}>投喂</button><button onClick={() => setHomePanel('dressup')}>装扮</button></div>
           {storageNotice && <div className="storage-notice">{storageNotice}</div>}
+          {renderHomePanel()}
           {isDebug && (
             <div className="debug-panel">
               <strong>Debug</strong>
               <button onClick={() => setCharacter({ ...character, lastUpdatedAt: new Date(Date.now() - 3600000).toISOString() })}>时间前进 1 小时</button>
-              <button onClick={() => setCharacter(updateLifeValue(character, { satiety: character.satiety - 20 }))}>饱食度 -20</button>
-              <button onClick={() => setCharacter(updateLifeValue(character, { mood: character.mood - 20 }))}>心情值 -20</button>
-              <button onClick={() => setCharacter(updateLifeValue(character, { energy: character.energy - 20 }))}>精力值 -20</button>
+              <button onClick={() => setCharacter(updateLifeValue(character, { bond: character.bond + 20 }))}>bond +20</button>
+              <button onClick={() => setCharacter(updateLifeValue(character, { mood: character.mood - 40 }))}>mood -40</button>
+              <button onClick={() => setCharacter(updateLifeValue(character, { satiety: character.satiety - 40 }))}>satiety -40</button>
+              <button onClick={() => setCharacter(updateLifeValue(character, { energy: character.energy - 40 }))}>energy -40</button>
               <button onClick={restoreStats}>状态全部恢复</button>
-              <button onClick={() => simulateLongAbsence(7)}>模拟离开 7 小时</button>
-              <button onClick={() => simulateLongAbsence(25)}>模拟离开 25 小时</button>
+              <button onClick={() => simulateLongAbsence(8)}>模拟离开 8 小时</button>
+              <button onClick={() => simulateLongAbsence(24)}>模拟离开 1 天</button>
+              <button onClick={() => simulateLongAbsence(72)}>模拟离开 3 天</button>
+              <button onClick={() => setDiaryEntries(clearDiaryEntries())}>清空成长日记</button>
+              <button onClick={() => setAlbumItems(clearAlbumItems())}>清空相册</button>
+              <button onClick={resetAccessory}>重置装扮</button>
               <button onClick={clearCurrentImageCache}>清除当前 SoulPet 图片缓存</button>
               <button onClick={clearLocalData}>清除本地角色数据</button>
               <button onClick={() => setSimulatePetFailure((value) => !value)}>模拟 AI 宠物生成失败</button>

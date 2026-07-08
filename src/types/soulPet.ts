@@ -11,6 +11,7 @@ export type CharacterKind =
   | 'Q版角色占位'
 
 export type ActiveCharacterImageType = 'generated' | 'processed' | 'original' | 'default'
+export type ActiveAccessory = 'none' | 'crown' | 'bow' | 'sleepCap' | 'scarf'
 
 export type SoulPetCharacter = {
   id: string
@@ -22,6 +23,7 @@ export type SoulPetCharacter = {
   generatedPetImage?: string
   processedCharacterImage?: string
   activeCharacterImageType?: ActiveCharacterImageType
+  activeAccessory?: ActiveAccessory
   createdAt: string
   lastUpdatedAt: string
   lastVisitedAt?: string
