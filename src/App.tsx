@@ -321,11 +321,9 @@ const App = () => {
       }, delay)
     }
 
-    const initialMoveTimer = window.setTimeout(moveToNextSpot, 1800)
     scheduleRoomBehavior()
 
     return () => {
-      window.clearTimeout(initialMoveTimer)
       window.clearTimeout(roomBehaviorTimerRef.current)
       window.clearTimeout(roomActivityClearRef.current)
     }

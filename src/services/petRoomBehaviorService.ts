@@ -69,7 +69,7 @@ const weightedPick = (spots: WeightedSpot[]): PetRoomSpot => {
   return fallback
 }
 
-export const getNextRoomBehaviorDelay = (): number => 9000 + Math.floor(Math.random() * 9000)
+export const getNextRoomBehaviorDelay = (): number => 180000
 
 export const resolveRoomActivityText = (spot: PetRoomSpot, character?: SoulPetCharacter): string => {
   if (character && character.satiety <= 25) return '想吃点东西。'
