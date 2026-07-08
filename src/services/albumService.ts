@@ -1,3 +1,5 @@
+import { safeReadJson, safeRemoveStorageItem, safeSetStorageItem } from './safeStorage'
+
 export type AlbumItem = {
   id: string
   date: string
@@ -10,26 +12,17 @@ const albumStorageKey = 'soulpet_album_items'
 const albumFlagsStorageKey = 'soulpet_album_flags'
 const maxStoredImageChars = 900000
 
-const readJson = <T,>(key: string, fallback: T): T => {
-  try {
-    const raw = localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : fallback
-  } catch {
-    return fallback
-  }
-}
-
 const writeItems = (items: AlbumItem[]): void => {
-  localStorage.setItem(albumStorageKey, JSON.stringify(items))
+  safeSetStorageItem(albumStorageKey, JSON.stringify(items))
 }
 
-const readFlags = (): Record<string, boolean> => readJson(albumFlagsStorageKey, {})
+const readFlags = (): Record<string, boolean> => safeReadJson(albumFlagsStorageKey, {})
 
 const writeFlags = (flags: Record<string, boolean>): void => {
-  localStorage.setItem(albumFlagsStorageKey, JSON.stringify(flags))
+  safeSetStorageItem(albumFlagsStorageKey, JSON.stringify(flags))
 }
 
-export const loadAlbumItems = (): AlbumItem[] => readJson<AlbumItem[]>(albumStorageKey, [])
+export const loadAlbumItems = (): AlbumItem[] => safeReadJson<AlbumItem[]>(albumStorageKey, [])
 
 export const addAlbumItem = (
   item: Omit<AlbumItem, 'id' | 'date'>,
@@ -83,7 +76,7 @@ export const recordAccessoryAlbum = (accessoryName: string, image?: string): Alb
   })
 
 export const clearAlbumItems = (): AlbumItem[] => {
-  localStorage.removeItem(albumStorageKey)
-  localStorage.removeItem(albumFlagsStorageKey)
+  safeRemoveStorageItem(albumStorageKey)
+  safeRemoveStorageItem(albumFlagsStorageKey)
   return []
 }

@@ -1,4 +1,5 @@
 import type { SoulPetCharacter } from '../types/soulPet'
+import { safeGetStorageItem, safeRemoveStorageItem, safeSetStorageItem } from './safeStorage'
 
 const metadataKey = 'soulpet:v0.4:character'
 const dbName = 'soulpet-images'
@@ -77,7 +78,7 @@ const deleteImages = async (keys: string[]): Promise<void> => {
 
 export const saveSoulPetCharacter = async (character: SoulPetCharacter): Promise<void> => {
   const { originalImage, generatedPetImage, processedCharacterImage, ...metadata } = character
-  localStorage.setItem(metadataKey, JSON.stringify(metadata satisfies StoredMetadata))
+  safeSetStorageItem(metadataKey, JSON.stringify(metadata satisfies StoredMetadata))
 
   try {
     await Promise.all([
@@ -97,10 +98,16 @@ export const loadSoulPetCharacter = async (): Promise<SoulPetCharacter | null> =
 
   if (sessionCharacter) return sessionCharacter
 
-  const raw = localStorage.getItem(metadataKey)
+  const raw = safeGetStorageItem(metadataKey)
   if (!raw) return null
 
-  const metadata = JSON.parse(raw) as StoredMetadata
+  let metadata: StoredMetadata
+  try {
+    metadata = JSON.parse(raw) as StoredMetadata
+  } catch {
+    safeRemoveStorageItem(metadataKey)
+    return null
+  }
 
   try {
     return {
@@ -115,7 +122,7 @@ export const loadSoulPetCharacter = async (): Promise<SoulPetCharacter | null> =
 }
 
 export const clearSoulPetCharacter = async (): Promise<void> => {
-  localStorage.removeItem(metadataKey)
+  safeRemoveStorageItem(metadataKey)
   delete (window as Window & { __soulPetSessionCharacter?: SoulPetCharacter }).__soulPetSessionCharacter
   try {
     await clearImages()

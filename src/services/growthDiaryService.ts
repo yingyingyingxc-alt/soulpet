@@ -1,4 +1,5 @@
 import type { LifeStageInfo } from './lifeVisualResolver'
+import { safeReadJson, safeRemoveStorageItem, safeSetStorageItem } from './safeStorage'
 
 export type DiaryEntry = {
   id: string
@@ -11,26 +12,17 @@ export type DiaryEntry = {
 const diaryStorageKey = 'soulpet_diary_entries'
 const diaryFlagsStorageKey = 'soulpet_diary_flags'
 
-const readJson = <T,>(key: string, fallback: T): T => {
-  try {
-    const raw = localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : fallback
-  } catch {
-    return fallback
-  }
-}
-
 const writeEntries = (entries: DiaryEntry[]): void => {
-  localStorage.setItem(diaryStorageKey, JSON.stringify(entries))
+  safeSetStorageItem(diaryStorageKey, JSON.stringify(entries))
 }
 
-const readFlags = (): Record<string, boolean> => readJson(diaryFlagsStorageKey, {})
+const readFlags = (): Record<string, boolean> => safeReadJson(diaryFlagsStorageKey, {})
 
 const writeFlags = (flags: Record<string, boolean>): void => {
-  localStorage.setItem(diaryFlagsStorageKey, JSON.stringify(flags))
+  safeSetStorageItem(diaryFlagsStorageKey, JSON.stringify(flags))
 }
 
-export const loadDiaryEntries = (): DiaryEntry[] => readJson<DiaryEntry[]>(diaryStorageKey, [])
+export const loadDiaryEntries = (): DiaryEntry[] => safeReadJson<DiaryEntry[]>(diaryStorageKey, [])
 
 export const addDiaryEntry = (
   entry: Omit<DiaryEntry, 'id' | 'date'>,
@@ -123,7 +115,7 @@ export const recordStageDiary = (stage: LifeStageInfo): DiaryEntry[] =>
   )
 
 export const clearDiaryEntries = (): DiaryEntry[] => {
-  localStorage.removeItem(diaryStorageKey)
-  localStorage.removeItem(diaryFlagsStorageKey)
+  safeRemoveStorageItem(diaryStorageKey)
+  safeRemoveStorageItem(diaryFlagsStorageKey)
   return []
 }

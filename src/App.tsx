@@ -10,6 +10,7 @@ import { resolveLifeStage, resolveLifeVisual } from './services/lifeVisualResolv
 import { getLocalChatReply, quickChatQuestions, type QuickChatQuestion } from './services/localChatService'
 import { clearSoulPetCharacter, clearSoulPetImageCache, loadSoulPetCharacter, saveSoulPetCharacter } from './services/petStorage'
 import { defaultRoomSpot, getApproachSpot, getNextRoomBehaviorDelay, resolveNextRoomSpot, resolveRoomActivityText, type PetRoomSpot } from './services/petRoomBehaviorService'
+import { safeGetStorageItem, safeSetStorageItem } from './services/safeStorage'
 import { getTimeContext } from './services/timeContext'
 import type { CharacterKind, CharacterSource, SoulPetCharacter } from './types/soulPet'
 
@@ -28,6 +29,9 @@ const bgmStorageKey = 'soulpet_bgm_enabled'
 const bgmPath = '/audio/soulpet-home.mp3'
 type HomePanel = 'diary' | 'album' | 'chat' | 'dressup' | 'help' | null
 type ChatMessage = { id: string; speaker: 'user' | 'pet'; text: string }
+
+const isMobileLikeBrowser = (): boolean =>
+  /iPhone|iPad|iPod|Android|Mobile|MicroMessenger/i.test(window.navigator.userAgent)
 
 const getCurrentRoute = (): Route => {
   const path = window.location.pathname
@@ -133,7 +137,7 @@ const App = () => {
   const [feedback, setFeedback] = useState<'none' | 'feed' | 'pet'>('none')
   const [simulatePetFailure, setSimulatePetFailure] = useState(false)
   const [simulateCutoutFailure, setSimulateCutoutFailure] = useState(false)
-  const [isBgmEnabled, setIsBgmEnabled] = useState(() => localStorage.getItem(bgmStorageKey) !== 'false')
+  const [isBgmEnabled, setIsBgmEnabled] = useState(() => safeGetStorageItem(bgmStorageKey) !== 'false')
   const [isBgmPlaying, setIsBgmPlaying] = useState(false)
   const [homePanel, setHomePanel] = useState<HomePanel>(null)
   const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>(() => loadDiaryEntries())
@@ -198,6 +202,7 @@ const App = () => {
 
     const audio = new Audio(bgmPath)
     audio.loop = true
+    audio.preload = 'none'
     audio.volume = 0.35
     audioRef.current = audio
 
@@ -208,7 +213,7 @@ const App = () => {
     audio.addEventListener('pause', handlePause)
     audio.addEventListener('error', handleError)
 
-    if (isBgmEnabled) {
+    if (isBgmEnabled && !isMobileLikeBrowser()) {
       void audio.play().catch(() => setIsBgmPlaying(false))
     }
 
@@ -364,12 +369,12 @@ const App = () => {
 
     if (isBgmPlaying) {
       audio.pause()
-      localStorage.setItem(bgmStorageKey, 'false')
+      safeSetStorageItem(bgmStorageKey, 'false')
       setIsBgmEnabled(false)
       return
     }
 
-    localStorage.setItem(bgmStorageKey, 'true')
+    safeSetStorageItem(bgmStorageKey, 'true')
     setIsBgmEnabled(true)
     void audio.play().catch(() => setIsBgmPlaying(false))
   }

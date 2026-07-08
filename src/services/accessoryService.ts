@@ -1,3 +1,5 @@
+import { safeGetStorageItem, safeRemoveStorageItem, safeSetStorageItem } from './safeStorage'
+
 export type AccessoryId = 'none' | 'crown' | 'bow' | 'sleepCap' | 'scarf'
 
 export type AccessoryOption = {
@@ -17,17 +19,17 @@ export const accessoryOptions: AccessoryOption[] = [
 ]
 
 export const loadActiveAccessory = (): AccessoryId => {
-  const value = localStorage.getItem(accessoryStorageKey)
+  const value = safeGetStorageItem(accessoryStorageKey)
   return accessoryOptions.some((option) => option.id === value) ? (value as AccessoryId) : 'none'
 }
 
 export const saveActiveAccessory = (accessory: AccessoryId): void => {
   if (accessory === 'none') {
-    localStorage.removeItem(accessoryStorageKey)
+    safeRemoveStorageItem(accessoryStorageKey)
     return
   }
 
-  localStorage.setItem(accessoryStorageKey, accessory)
+  safeSetStorageItem(accessoryStorageKey, accessory)
 }
 
 export const getAccessoryOption = (accessory: AccessoryId): AccessoryOption =>
