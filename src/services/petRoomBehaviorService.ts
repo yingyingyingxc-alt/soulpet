@@ -20,18 +20,18 @@ export const defaultRoomSpot: PetRoomSpot = {
   id: 'rug',
   label: '地毯中央',
   x: 50,
-  y: 70,
-  scale: 1,
+  y: 68,
+  scale: 0.88,
   activity: 'idle'
 }
 
 const roomSpots: Record<PetRoomSpot['id'], Omit<PetRoomSpot, 'activity'>> = {
-  rug: { id: 'rug', label: '地毯中央', x: 50, y: 70, scale: 1 },
-  bed: { id: 'bed', label: '小床', x: 35, y: 64, scale: 0.9 },
-  window: { id: 'window', label: '窗边', x: 27, y: 47, scale: 0.82 },
-  toy: { id: 'toy', label: '玩具区', x: 65, y: 70, scale: 0.92 },
-  catTree: { id: 'catTree', label: '猫爬架附近', x: 79, y: 57, scale: 0.78 },
-  foreground: { id: 'foreground', label: '靠近你的位置', x: 50, y: 75, scale: 1.16 }
+  rug: { id: 'rug', label: '地毯中央', x: 50, y: 68, scale: 0.88 },
+  bed: { id: 'bed', label: '小床', x: 34, y: 67, scale: 0.72 },
+  window: { id: 'window', label: '窗边', x: 32, y: 54, scale: 0.64 },
+  toy: { id: 'toy', label: '玩具区', x: 64, y: 69, scale: 0.76 },
+  catTree: { id: 'catTree', label: '猫爬架附近', x: 77, y: 60, scale: 0.62 },
+  foreground: { id: 'foreground', label: '靠近你的位置', x: 50, y: 75, scale: 1 }
 }
 
 const activityText: Record<PetRoomActivity, string> = {
@@ -69,7 +69,7 @@ const weightedPick = (spots: WeightedSpot[]): PetRoomSpot => {
   return fallback
 }
 
-export const getNextRoomBehaviorDelay = (): number => 20000 + Math.floor(Math.random() * 25000)
+export const getNextRoomBehaviorDelay = (): number => 9000 + Math.floor(Math.random() * 9000)
 
 export const resolveRoomActivityText = (spot: PetRoomSpot, character?: SoulPetCharacter): string => {
   if (character && character.satiety <= 25) return '想吃点东西。'

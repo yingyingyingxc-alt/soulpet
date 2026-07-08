@@ -460,25 +460,25 @@ input[type="text"]:focus {
 
 .pet-home-page {
   align-items: stretch;
-  padding: 18px;
+  padding: 16px;
   overflow: hidden;
   background:
-    radial-gradient(circle at 20% 8%, rgba(255, 246, 211, 0.9), transparent 28%),
-    linear-gradient(180deg, #bfe8f0 0%, #dff3ee 100%);
+    radial-gradient(circle at 18% 12%, rgba(255, 246, 211, 0.82), transparent 26%),
+    linear-gradient(180deg, #c9edf0 0%, #eef7ed 100%);
 }
 
 .pet-home-layout {
   position: relative;
-  width: min(100%, 1180px);
-  min-height: calc(100vh - 36px);
+  width: min(100%, 1240px);
+  min-height: calc(100vh - 32px);
   overflow: hidden;
-  border-radius: 24px;
+  border-radius: 26px;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.18), transparent 42%),
-    linear-gradient(#fff4df 0 59%, #f4cf9f 59% 60%, #d9b07d 60% 100%);
+    radial-gradient(circle at 50% 18%, rgba(255, 242, 190, 0.3), transparent 32%),
+    linear-gradient(#fff5e8 0 58%, #efca9a 58% 59%, #d2a06c 59% 100%);
   box-shadow:
-    inset 0 0 0 3px rgba(255, 255, 255, 0.58),
-    0 24px 70px rgba(51, 115, 105, 0.16);
+    inset 0 0 0 3px rgba(255, 255, 255, 0.7),
+    0 24px 64px rgba(51, 115, 105, 0.15);
 }
 
 .scene-morning .pet-home-layout {
@@ -548,62 +548,61 @@ input[type="text"]:focus {
 
 .attic-roof {
   inset: 0 0 auto;
-  height: 31%;
-  background:
-    linear-gradient(27deg, transparent 0 45%, rgba(214, 157, 96, 0.2) 45% 46%, transparent 46%),
-    linear-gradient(-27deg, transparent 0 45%, rgba(214, 157, 96, 0.2) 45% 46%, transparent 46%);
+  z-index: 0;
+  height: 145px;
+  background: linear-gradient(180deg, rgba(242, 200, 146, 0.62), rgba(242, 200, 146, 0));
 }
 
 .attic-roof::before,
 .attic-roof::after {
   position: absolute;
-  top: -8%;
-  width: 62%;
-  height: 72%;
-  border-radius: 0 0 28px 28px;
-  background: #f2c892;
+  top: -54px;
+  width: 58%;
+  height: 128px;
+  border-radius: 0 0 42px 42px;
+  background: rgba(242, 200, 146, 0.78);
   box-shadow: inset 0 -10px 0 rgba(148, 88, 51, 0.08);
   content: "";
 }
 
 .attic-roof::before {
   left: -4%;
-  transform: skewY(-16deg);
+  transform: skewY(-9deg);
   transform-origin: right bottom;
 }
 
 .attic-roof::after {
   right: -4%;
-  transform: skewY(16deg);
+  transform: skewY(9deg);
   transform-origin: left bottom;
 }
 
 .roof-beam {
-  top: 18%;
-  width: 44%;
-  height: 14px;
+  top: 155px;
+  width: 24%;
+  height: 10px;
   border-radius: 999px;
-  background: rgba(179, 112, 67, 0.48);
+  background: rgba(179, 112, 67, 0.18);
   z-index: 1;
 }
 
 .beam-left {
-  left: 10%;
-  transform: rotate(16deg);
+  left: 29%;
+  transform: rotate(12deg);
 }
 
 .beam-right {
-  right: 10%;
-  transform: rotate(-16deg);
+  right: 29%;
+  transform: rotate(-12deg);
 }
 
 .skylight {
   left: 50%;
-  top: 7%;
+  top: 46px;
   z-index: 2;
-  width: 146px;
-  height: 72px;
-  border: 8px solid rgba(255, 255, 255, 0.9);
+  width: 128px;
+  height: 60px;
+  border: 7px solid rgba(255, 255, 255, 0.9);
   border-radius: 26px;
   background:
     linear-gradient(90deg, transparent 47%, rgba(255, 255, 255, 0.66) 47% 53%, transparent 53%),
@@ -622,8 +621,8 @@ input[type="text"]:focus {
 
 .vine {
   z-index: 3;
-  width: 8px;
-  height: 150px;
+  width: 7px;
+  height: 104px;
   border-radius: 999px;
   background: #7eb47d;
   transform-origin: top center;
@@ -652,22 +651,22 @@ input[type="text"]:focus {
 }
 
 .vine-left {
-  left: 19%;
-  top: 7%;
+  left: 22%;
+  top: 140px;
   animation: hangingSwing 5.4s ease-in-out infinite;
 }
 
 .vine-right {
-  right: 25%;
-  top: 8%;
-  height: 112px;
+  right: 24%;
+  top: 132px;
+  height: 88px;
   animation: hangingSwing 6.2s ease-in-out infinite reverse;
 }
 
 .sunbeam {
   z-index: 1;
-  width: 26%;
-  height: 54%;
+  width: 20%;
+  height: 42%;
   border-radius: 50%;
   background: linear-gradient(180deg, rgba(255, 245, 180, 0.38), rgba(255, 245, 180, 0));
   filter: blur(1px);
@@ -676,14 +675,14 @@ input[type="text"]:focus {
 }
 
 .sunbeam-one {
-  left: 28%;
-  top: 10%;
+  left: 42%;
+  top: 14%;
 }
 
 .sunbeam-two {
-  left: 47%;
-  top: 13%;
-  opacity: 0.68;
+  left: 55%;
+  top: 15%;
+  opacity: 0.42;
   animation-delay: -5s;
 }
 
@@ -698,13 +697,13 @@ input[type="text"]:focus {
 }
 
 .spot-one {
-  left: 30%;
-  top: 70%;
+  left: 42%;
+  top: 76%;
 }
 
 .spot-two {
-  right: 24%;
-  top: 66%;
+  right: 34%;
+  top: 72%;
   animation-delay: -3s;
 }
 
@@ -720,26 +719,26 @@ input[type="text"]:focus {
 }
 
 .cloud-one {
-  left: 10%;
-  top: 20%;
+  left: 18%;
+  top: 26%;
   animation: cloudDrift 16s ease-in-out infinite;
 }
 
 .cloud-two {
-  right: 13%;
-  top: 23%;
+  right: 14%;
+  top: 29%;
   transform: scale(0.72);
   animation: cloudDrift 18s ease-in-out infinite reverse;
 }
 
 .window-shape {
-  left: 23%;
-  top: 28%;
+  left: 26%;
+  top: 29%;
   z-index: 2;
-  width: 174px;
-  height: 132px;
-  border: 9px solid rgba(255, 255, 255, 0.94);
-  border-radius: 34px;
+  width: 144px;
+  height: 108px;
+  border: 8px solid rgba(255, 255, 255, 0.94);
+  border-radius: 28px;
   background:
     linear-gradient(90deg, transparent 47%, rgba(255, 255, 255, 0.74) 47% 53%, transparent 53%),
     linear-gradient(transparent 47%, rgba(255, 255, 255, 0.74) 47% 53%, transparent 53%),
@@ -767,8 +766,8 @@ input[type="text"]:focus {
 }
 
 .wall-lamp {
-  left: 10%;
-  top: 35%;
+  left: 11%;
+  top: 38%;
   z-index: 2;
   width: 34px;
   height: 42px;
@@ -780,11 +779,11 @@ input[type="text"]:focus {
 }
 
 .soft-sofa {
-  left: 8%;
-  bottom: 20%;
+  left: 9%;
+  bottom: 14%;
   z-index: 2;
-  width: 180px;
-  height: 86px;
+  width: 150px;
+  height: 70px;
   border-radius: 38px 38px 24px 24px;
   background: #f5b7ad;
   box-shadow:
@@ -803,11 +802,11 @@ input[type="text"]:focus {
 }
 
 .pet-bed {
-  left: 35%;
-  bottom: 17%;
+  left: 31%;
+  bottom: 16%;
   z-index: 2;
-  width: 210px;
-  height: 72px;
+  width: 174px;
+  height: 60px;
   border-radius: 52px;
   background: #d9ead8;
   box-shadow:
@@ -817,20 +816,20 @@ input[type="text"]:focus {
 }
 
 .pet-bed i {
-  left: 36px;
-  top: -18px;
-  width: 78px;
-  height: 48px;
+  left: 28px;
+  top: -14px;
+  width: 62px;
+  height: 38px;
   border-radius: 22px;
   background: #fff0c9;
   transform: rotate(-7deg);
 }
 
 .pet-bed b {
-  right: 40px;
-  top: -12px;
-  width: 58px;
-  height: 40px;
+  right: 32px;
+  top: -10px;
+  width: 48px;
+  height: 32px;
   border-radius: 18px;
   background: #c8ddf1;
   transform: rotate(8deg);
@@ -838,17 +837,18 @@ input[type="text"]:focus {
 
 .cat-tree {
   right: 9%;
-  bottom: 19%;
+  bottom: 16%;
   z-index: 2;
-  width: 150px;
-  height: 238px;
+  width: 118px;
+  height: 196px;
+  opacity: 0.86;
 }
 
 .cat-tree::before,
 .cat-tree::after {
   position: absolute;
-  left: 67px;
-  width: 16px;
+  left: 52px;
+  width: 13px;
   border-radius: 999px;
   background: #c79262;
   content: "";
@@ -856,12 +856,12 @@ input[type="text"]:focus {
 
 .cat-tree::before {
   bottom: 0;
-  height: 190px;
+  height: 156px;
 }
 
 .cat-tree::after {
   bottom: 72px;
-  height: 120px;
+  height: 98px;
   transform: rotate(-36deg);
   transform-origin: bottom center;
 }
@@ -870,8 +870,8 @@ input[type="text"]:focus {
 .cat-tree b,
 .cat-tree em {
   left: 50%;
-  width: 124px;
-  height: 30px;
+  width: 96px;
+  height: 25px;
   border-radius: 999px;
   background: #f0c18b;
   box-shadow: 0 10px 18px rgba(99, 63, 43, 0.12);
@@ -884,17 +884,17 @@ input[type="text"]:focus {
 
 .cat-tree b {
   bottom: 106px;
-  width: 112px;
+  width: 90px;
 }
 
 .cat-tree em {
   bottom: 184px;
-  width: 96px;
+  width: 78px;
 }
 
 .toy-ball {
-  right: 27%;
-  bottom: 18%;
+  right: 32%;
+  bottom: 16%;
   z-index: 3;
   width: 34px;
   height: 34px;
@@ -906,8 +906,8 @@ input[type="text"]:focus {
 }
 
 .toy-mouse {
-  right: 32%;
-  bottom: 15%;
+  right: 38%;
+  bottom: 13%;
   z-index: 3;
   width: 52px;
   height: 24px;
@@ -928,11 +928,11 @@ input[type="text"]:focus {
 }
 
 .fish-mobile {
-  right: 28%;
-  top: 25%;
+  right: 26%;
+  top: 27%;
   z-index: 3;
-  width: 88px;
-  height: 110px;
+  width: 66px;
+  height: 88px;
   border-left: 2px dashed rgba(83, 115, 110, 0.28);
   animation: hangingSwing 5.8s ease-in-out infinite;
 }
@@ -968,7 +968,7 @@ input[type="text"]:focus {
 }
 
 .small-door {
-  right: 18%;
+  right: 19%;
   bottom: 0;
   z-index: 1;
   width: 88px;
@@ -990,11 +990,11 @@ input[type="text"]:focus {
 }
 
 .wood-cabinet {
-  left: 15%;
-  bottom: 7%;
+  left: 18%;
+  bottom: 6%;
   z-index: 2;
-  width: 132px;
-  height: 76px;
+  width: 112px;
+  height: 64px;
   border-radius: 20px 20px 12px 12px;
   background: #d49b65;
   box-shadow: inset 0 -12px 0 rgba(88, 54, 38, 0.08);
@@ -1053,20 +1053,20 @@ input[type="text"]:focus {
 }
 
 .plant-left {
-  left: 4%;
+  left: 5%;
 }
 
 .plant-right {
   right: 5%;
-  transform: scale(0.8);
+  transform: scale(0.72);
 }
 
 .floor-rug {
   left: 50%;
-  bottom: 9%;
+  bottom: 8%;
   z-index: 1;
-  width: min(62vw, 610px);
-  height: 150px;
+  width: min(46vw, 520px);
+  height: 116px;
   border-radius: 50%;
   background:
     repeating-radial-gradient(ellipse at center, rgba(255, 248, 234, 0.98) 0 12px, rgba(255, 219, 173, 0.84) 13px 23px, rgba(211, 234, 216, 0.72) 24px 34px);
@@ -1261,30 +1261,30 @@ input[type="text"]:focus {
   display: grid;
   align-items: end;
   justify-items: center;
-  width: clamp(210px, 28vw, 340px);
+  width: clamp(170px, 20vw, 270px);
   transform: translate(-50%, -100%);
   transition:
-    left 1100ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    top 1100ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    width 320ms ease;
+    left 1400ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    top 1400ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    width 420ms ease;
   will-change: left, top;
 }
 
 .home-pet-stage.spot-foreground {
   z-index: 11;
-  width: clamp(260px, 34vw, 390px);
+  width: clamp(230px, 27vw, 340px);
 }
 
 .home-pet-stage.spot-window,
 .home-pet-stage.spot-catTree {
-  width: clamp(180px, 22vw, 270px);
+  width: clamp(145px, 16vw, 215px);
 }
 
 .pet-character {
   --pet-scale: 1;
   position: relative;
   display: grid;
-  width: min(100%, 320px);
+  width: min(100%, 270px);
   min-width: 0;
   aspect-ratio: 1;
   align-items: end;
@@ -1515,15 +1515,15 @@ input[type="text"]:focus {
 
 .status-bubble {
   position: absolute;
-  right: 0;
-  top: 2%;
+  right: -22px;
+  top: 4%;
   max-width: 220px;
   border: 2px solid rgba(255, 255, 255, 0.92);
   border-radius: 24px;
   padding: 13px 18px;
   color: #2c4e49;
   background: rgba(255, 255, 255, 0.88);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 900;
   box-shadow: 0 14px 34px rgba(31, 111, 103, 0.14);
 }
@@ -1546,10 +1546,10 @@ input[type="text"]:focus {
   z-index: 4;
   justify-items: center;
   gap: 6px;
-  margin-top: -8px;
+  margin-top: -2px;
   border: 2px solid rgba(255, 255, 255, 0.86);
   border-radius: 22px;
-  padding: 12px 22px;
+  padding: 10px 18px;
   background: rgba(255, 255, 255, 0.74);
   box-shadow: 0 14px 30px rgba(31, 111, 103, 0.1);
 }
@@ -1557,7 +1557,7 @@ input[type="text"]:focus {
 .home-life-caption strong {
   margin: 0;
   color: #3e615c;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 900;
 }
 
@@ -2258,8 +2258,8 @@ input[type="text"]:focus {
     top: -8px;
     max-width: 168px;
     padding: 10px 14px;
-    font-size: 15px;
-  }
+  font-size: 14px;
+}
 
   .home-life-caption {
     max-width: min(86vw, 360px);

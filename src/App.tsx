@@ -305,20 +305,27 @@ const App = () => {
   useEffect(() => {
     if (route !== '/home' || !character) return
 
+    const moveToNextSpot = () => {
+      const nextSpot = resolveNextRoomSpot(character, timeContext)
+      setRoomSpot(nextSpot)
+      setRoomActivityText(resolveRoomActivityText(nextSpot, character))
+      window.clearTimeout(roomActivityClearRef.current)
+      roomActivityClearRef.current = window.setTimeout(() => setRoomActivityText(''), 5200)
+    }
+
     const scheduleRoomBehavior = () => {
       const delay = getNextRoomBehaviorDelay()
       roomBehaviorTimerRef.current = window.setTimeout(() => {
-        const nextSpot = resolveNextRoomSpot(character, timeContext)
-        setRoomSpot(nextSpot)
-        setRoomActivityText(resolveRoomActivityText(nextSpot, character))
-        roomActivityClearRef.current = window.setTimeout(() => setRoomActivityText(''), 5200)
+        moveToNextSpot()
         scheduleRoomBehavior()
       }, delay)
     }
 
+    const initialMoveTimer = window.setTimeout(moveToNextSpot, 1800)
     scheduleRoomBehavior()
 
     return () => {
+      window.clearTimeout(initialMoveTimer)
       window.clearTimeout(roomBehaviorTimerRef.current)
       window.clearTimeout(roomActivityClearRef.current)
     }
