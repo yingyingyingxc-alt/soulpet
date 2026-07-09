@@ -3,12 +3,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import express from 'express'
 import multer from 'multer'
-import sharp from 'sharp'
 import { getImageProvider, getImageProviderName } from './providers'
 import { maxImageSize, validateImageFile } from './utils/imageValidation'
-
-sharp.cache(false)
-sharp.concurrency(1)
 
 const app = express()
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: maxImageSize } })
@@ -125,7 +121,8 @@ app.post('/api/generate-pet', upload.single('image'), async (request, response) 
     const personality = request.body.personality
     const source = request.body.source
     const jobId = await startImageJob(async () => {
-      const result = await getImageProvider().generatePetChibi({
+      const imageProvider = await getImageProvider()
+      const result = await imageProvider.generatePetChibi({
         file: uploadedFile,
         name,
         personality,
@@ -171,7 +168,8 @@ app.post('/api/remove-character-background', upload.single('image'), async (requ
     const name = request.body.name
     const source = request.body.source
     const jobId = await startImageJob(async () => {
-      const result = await getImageProvider().removeCharacterBackground({
+      const imageProvider = await getImageProvider()
+      const result = await imageProvider.removeCharacterBackground({
         file: uploadedFile,
         name,
         source

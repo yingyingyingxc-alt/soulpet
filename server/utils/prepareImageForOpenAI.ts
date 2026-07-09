@@ -1,5 +1,5 @@
 import path from 'node:path'
-import sharp from 'sharp'
+import { loadSharp } from './loadSharp'
 
 type PreparedImage = {
   buffer: Buffer
@@ -10,6 +10,7 @@ type PreparedImage = {
 const maxInputPixels = 1024
 
 export const prepareImageForOpenAI = async (file: Express.Multer.File): Promise<PreparedImage> => {
+  const sharp = await loadSharp()
   const fileName = `${path.parse(file.originalname || 'image').name || 'image'}.png`
   const buffer = await sharp(file.buffer)
     .rotate()

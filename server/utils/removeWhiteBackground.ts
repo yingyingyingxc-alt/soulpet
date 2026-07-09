@@ -1,4 +1,4 @@
-import sharp from 'sharp'
+import { loadSharp } from './loadSharp'
 
 type Rgba = {
   r: number
@@ -71,6 +71,7 @@ const detectBackgroundColor = (buffer: Buffer, width: number, height: number): R
 }
 
 export const removeWhiteBackground = async (imageBuffer: Buffer): Promise<Buffer> => {
+  const sharp = await loadSharp()
   const image = sharp(imageBuffer).rotate().ensureAlpha()
   const { data, info } = await image.raw().toBuffer({ resolveWithObject: true })
   const { width, height } = info

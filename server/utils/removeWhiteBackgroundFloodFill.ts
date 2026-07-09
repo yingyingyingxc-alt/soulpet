@@ -1,4 +1,4 @@
-import sharp from 'sharp'
+import { loadSharp } from './loadSharp'
 
 export type RemoveWhiteBackgroundFloodFillResult = {
   dataUrl: string
@@ -52,6 +52,7 @@ const enqueueEdgePixels = (
 export const removeWhiteBackgroundFloodFill = async (
   imageBuffer: Buffer
 ): Promise<RemoveWhiteBackgroundFloodFillResult> => {
+  const sharp = await loadSharp()
   const { data, info } = await sharp(imageBuffer)
     .rotate()
     .resize({

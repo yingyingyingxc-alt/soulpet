@@ -1,4 +1,4 @@
-import sharp from 'sharp'
+import { loadSharp } from './loadSharp'
 
 export type RemoveGreenScreenBackgroundResult = {
   dataUrl: string
@@ -46,6 +46,7 @@ const enqueueEdgePixels = (
 export const removeGreenScreenBackground = async (
   imageBuffer: Buffer
 ): Promise<RemoveGreenScreenBackgroundResult> => {
+  const sharp = await loadSharp()
   const { data, info } = await sharp(imageBuffer)
     .rotate()
     .resize({
