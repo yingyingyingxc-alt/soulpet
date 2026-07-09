@@ -8,7 +8,8 @@ import { maxImageSize, validateImageFile } from './utils/imageValidation'
 
 const app = express()
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: maxImageSize } })
-const port = process.env.PORT || process.env.SERVER_PORT || 3001
+const port = Number(process.env.PORT || process.env.SERVER_PORT || 3001)
+const host = '0.0.0.0'
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const indexHtmlPath = path.join(rootDir, 'dist', 'index.html')
 const imageJobs = new Map<
@@ -203,6 +204,6 @@ app.use((error: unknown, _request: express.Request, response: express.Response, 
   sendError(response, error, 'UNKNOWN_ERROR')
 })
 
-app.listen(port, () => {
-  console.log(`SoulPet API server listening on http://localhost:${port}`)
+app.listen(port, host, () => {
+  console.log(`SoulPet API server listening on http://${host}:${port}`)
 })
